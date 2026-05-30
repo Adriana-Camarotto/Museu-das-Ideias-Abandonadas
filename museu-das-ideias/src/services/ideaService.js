@@ -51,3 +51,36 @@ export async function checkApiHealth() {
     return false;
   }
 }
+
+/**
+ * Assina alertas do museu e dispara e-mail de confirmação
+ * @param {string} email - E-mail do assinante
+ * @returns {Promise<Object>}
+ */
+export async function subscribeToAlerts(email) {
+  try {
+    const response = await fetch(API_ENDPOINTS.subscribeAlerts, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Nao foi possivel assinar os alertas');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro ao assinar alertas:', error);
+
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      throw new Error('Nao foi possivel conectar ao backend (http://localhost:3001). Verifique se o servidor backend esta em execucao.');
+    }
+
+    throw error;
+  }
+}

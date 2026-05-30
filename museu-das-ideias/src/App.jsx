@@ -4,6 +4,7 @@ import MuseumModal from './components/MuseumModal';
 import { MODAL_CONTENTS } from './components/ModalContent';
 import IdeaForm from './components/IdeaForm';
 import FormModal from './components/FormModal';
+import { subscribeToAlerts } from './services/ideaService';
 
 export default function App() {
   const [activeModal, setActiveModal] = useState(null);
@@ -13,6 +14,9 @@ export default function App() {
   const [activeRankTab, setActiveRankTab] = useState('Geral');
   const [selectedMood, setSelectedMood] = useState(4);
   const [abandonReason, setAbandonReason] = useState('');
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterFeedback, setNewsletterFeedback] = useState(null);
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
 
   const museumCards = [
     { icon: '🕯️', name: 'Loja de Velas Aromáticas', dates: '2022 – 2022', cause: 'Pesquisa excessiva no Pinterest' },
@@ -39,6 +43,37 @@ export default function App() {
   const closeModal = () => {
     setActiveModal(null);
     setIsFormModalOpen(false);
+  };
+
+  const handleNewsletterSubscribe = async () => {
+    const email = newsletterEmail.trim();
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+    if (!email || !isValidEmail) {
+      setNewsletterFeedback({
+        type: 'error',
+        message: 'Digite um e-mail válido para assinar os alertas.'
+      });
+      return;
+    }
+
+    try {
+      setNewsletterLoading(true);
+      setNewsletterFeedback(null);
+      await subscribeToAlerts(email);
+      setNewsletterFeedback({
+        type: 'success',
+        message: 'E-mail de confirmacao enviado. Verifique sua caixa de entrada.'
+      });
+      setNewsletterEmail('');
+    } catch (error) {
+      setNewsletterFeedback({
+        type: 'error',
+        message: error.message || 'Nao foi possivel enviar o e-mail de confirmacao.'
+      });
+    } finally {
+      setNewsletterLoading(false);
+    }
   };
 
   return (
@@ -346,9 +381,46 @@ export default function App() {
             <div className="footer-title">🔔 Receba alertas do museu</div>
             <div className="footer-sub">Novos achados, relíquias e verdades que você não pediu, mas precisa ouvir.</div>
             <div className="footer-input-row">
-              <input className="footer-input" type="email" placeholder="Seu melhor e-mail" />
-              <button className="btn-primary" type="button" style={{ fontSize: '12px', padding: '8px 14px' }}>Assinar</button>
+              <input
+                className="footer-input"
+                type="email"
+                placeholder="Seu melhor e-mail"
+                value={newsletterEmail}
+                onChange={(event) => {
+                  setNewsletterEmail(event.target.value);
+                  if (newsletterFeedback) {
+                    setNewsletterFeedback(null);
+                  }
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    handleNewsletterSubscribe();
+                  }
+                }}
+                disabled={newsletterLoading}
+              />
+              <button
+                className="btn-primary"
+                type="button"
+                onClick={handleNewsletterSubscribe}
+                disabled={newsletterLoading}
+                style={{ fontSize: '12px', padding: '8px 14px' }}
+              >
+                {newsletterLoading ? 'Enviando...' : 'Assinar'}
+              </button>
             </div>
+            {newsletterFeedback && (
+              <div
+                style={{
+                  marginTop: '8px',
+                  fontSize: '11px',
+                  color: newsletterFeedback.type === 'success' ? '#7fd6a9' : 'var(--danger)'
+                }}
+              >
+                {newsletterFeedback.message}
+              </div>
+            )}
           </section>
         </div>
       </main>

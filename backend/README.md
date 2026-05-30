@@ -6,6 +6,7 @@ Backend Node.js que serve como ponte entre o frontend React e a API do Google Ge
 
 - Node.js + Express
 - Google Gemini AI (gemini-1.5-flash)
+- Nodemailer (SMTP)
 - CORS + dotenv
 
 ## 📦 Instalação e Configuração
@@ -18,10 +19,16 @@ npm install
 copy .env.example .env
 ```
 
-Edite o `.env` e adicione sua chave do Gemini:
+Edite o `.env` e adicione sua chave do Gemini e dados SMTP:
 ```env
 PORT=3001
 GEMINI_API_KEY=sua_chave_aqui
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=seu_email@gmail.com
+SMTP_PASS=sua_senha_de_app
+MAIL_FROM="Museu das Ideias Abandonadas <seu_email@gmail.com>"
 ```
 
 **Obter chave:** https://makersuite.google.com/app/apikey
@@ -39,6 +46,16 @@ Health check do servidor.
 
 ### `POST /api/analisar-ideia`
 Analisa uma ideia abandonada.
+
+### `POST /api/assinar-alertas`
+Assina alertas do museu e envia e-mail de confirmação.
+
+**Request:**
+```json
+{
+  "email": "visitante@exemplo.com"
+}
+```
 
 **Request:**
 ```json

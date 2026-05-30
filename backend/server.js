@@ -12,6 +12,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import nodemailer from 'nodemailer';
 
 // Carrega variáveis de ambiente do arquivo .env
 dotenv.config();
@@ -27,6 +28,49 @@ app.use(express.json()); // Parse de JSON no body das requisições
 // Inicializa o cliente do Google Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+async function sendSubscriptionEmail(email) {
+  const {
+    SMTP_HOST,
+    SMTP_PORT,
+    SMTP_SECURE,
+    SMTP_USER,
+    SMTP_PASS,
+    MAIL_FROM,
+  } = process.env;
+
+  if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS || !MAIL_FROM) {
+    throw new Error('Configuracao de e-mail incompleta no servidor (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_FROM).');
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: Number(SMTP_PORT),
+    secure: String(SMTP_SECURE).toLowerCase() === 'true',
+    auth: {
+      user: SMTP_USER,
+      pass: SMTP_PASS,
+    },
+  });
+
+  await transporter.sendMail({
+    from: MAIL_FROM,
+    to: email,
+    subject: 'Confirmacao de assinatura - Museu das Ideias Abandonadas',
+    text: 'Sua assinatura foi confirmada. A Curadoria do Caos vai te enviar os proximos alertas do museu.',
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #221a35;">
+        <h2 style="margin-bottom: 8px;">Assinatura confirmada</h2>
+        <p>Sua assinatura no <strong>Museu das Ideias Abandonadas</strong> foi confirmada com sucesso.</p>
+        <p>A Curadoria do Caos vai te avisar quando surgirem novos achados e reliquias.</p>
+      </div>
+    `,
+  });
+}
 
 /**
  * Rota de health check para verificar se o servidor está rodando
@@ -145,6 +189,40 @@ Seja criativa, poética e levemente cruel - mas sempre termine com uma nota de e
 });
 
 /**
+ * POST /api/assinar-alertas
+ *
+ * Assina um e-mail para receber alertas do museu e envia
+ * um e-mail de confirmacao para o usuario.
+ */
+app.post('/api/assinar-alertas', async (req, res) => {
+  try {
+    const email = (req.body?.email || '').trim();
+
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Forneca um e-mail valido para assinar os alertas.'
+      });
+    }
+
+    await sendSubscriptionEmail(email);
+
+    return res.status(200).json({
+      success: true,
+      message: 'E-mail de confirmacao enviado com sucesso.'
+    });
+  } catch (error) {
+    console.error('❌ Erro ao enviar e-mail de assinatura:', error);
+
+    return res.status(500).json({
+      success: false,
+      error: 'Nao foi possivel enviar o e-mail de confirmacao. Verifique a configuracao de SMTP no backend.',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
  * Rota 404 - Captura rotas não encontradas
  */
 app.use((req, res) => {
@@ -168,6 +246,7 @@ app.listen(PORT, () => {
 ║     Endpoints disponíveis:                                ║
 ║     • GET  /health                                        ║
 ║     • POST /api/analisar-ideia                            ║
+║     • POST /api/assinar-alertas                           ║
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
   `);
