@@ -5,8 +5,8 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
     "build": "cd ../frontend && npm run build && cd ../backend",
     "deploy": "npm run build && npm start",
     "test": "echo \"Testes? Essa é mais uma ideia abandonada!\" && exit 0"
