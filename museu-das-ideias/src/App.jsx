@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import MuseumModal from './components/MuseumModal';
 import { MODAL_CONTENTS } from './components/ModalContent';
@@ -9,6 +9,7 @@ import { subscribeToAlerts } from './services/ideaService';
 export default function App() {
   const [activeModal, setActiveModal] = useState(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('Todas');
   const [activeMemTab, setActiveMemTab] = useState('Sobre');
   const [activeRankTab, setActiveRankTab] = useState('Geral');
@@ -17,6 +18,16 @@ export default function App() {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterFeedback, setNewsletterFeedback] = useState(null);
   const [newsletterLoading, setNewsletterLoading] = useState(false);
+  const [selectedCandleIdea, setSelectedCandleIdea] = useState('Loja de Velas Aromáticas');
+  const [candleCount, setCandleCount] = useState({});
+
+  const mainRef = useRef(null);
+  const museumSectionRef = useRef(null);
+  const memorialSectionRef = useRef(null);
+  const reliquiarySectionRef = useRef(null);
+  const rankingSectionRef = useRef(null);
+  const achievementSectionRef = useRef(null);
+  const timelineSectionRef = useRef(null);
 
   const museumCards = [
     { icon: '🕯️', name: 'Loja de Velas Aromáticas', dates: '2022 – 2022', cause: 'Pesquisa excessiva no Pinterest' },
@@ -32,18 +43,44 @@ export default function App() {
   const survivalPcts = [7, 13, 19, 31, 48];
   const survivalPct = survivalPcts[selectedMood] ?? 13;
 
-  const handleNavigate = (modalId) => {
-    if (modalId === 'analyze') {
-      setActiveModal(null); // Fecha modal e volta ao formulário
-    } else {
-      setActiveModal(modalId);
-    }
+  const handleNavigate = (section) => {
+    setActiveModal(null);
+
+    const scrollToElement = (ref) => {
+      if (ref?.current) {
+        ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+
+    const sectionMap = {
+      'inicio': () => mainRef.current?.parentElement?.scrollTo({ top: 0, behavior: 'smooth' }),
+      'museu': () => scrollToElement(museumSectionRef),
+      'memorial': () => setActiveModal('memorial'),
+      'reliquias': () => scrollToElement(reliquiarySectionRef),
+      'ranking': () => scrollToElement(rankingSectionRef),
+      'conquistas': () => scrollToElement(achievementSectionRef),
+      'timeline': () => scrollToElement(timelineSectionRef),
+      'comunidade': () => scrollToElement(museumSectionRef),
+      'sobre': () => setActiveModal('about')
+    };
+
+    sectionMap[section]?.();
   };
 
   const closeModal = () => {
     setActiveModal(null);
     setIsFormModalOpen(false);
   };
+
+  const handleLightCandle = () => {
+    setCandleCount(prev => ({
+      ...prev,
+      [selectedCandleIdea]: (prev[selectedCandleIdea] || 0) + 1
+    }));
+    setIsVideoModalOpen(true);
+  };
+
+  const selectedIdea = museumCards.find(card => card.name === selectedCandleIdea) || museumCards[0];
 
   const handleNewsletterSubscribe = async () => {
     const email = newsletterEmail.trim();
@@ -80,7 +117,7 @@ export default function App() {
     <div>
       <Sidebar onNavigate={handleNavigate} />
 
-      <main className="main">
+      <main className="main" ref={mainRef}>
         <header className="topbar">
           <div className="topbar-left">
             Museu das Ideias Abandonadas · Acervo vivo desde 2019
@@ -116,7 +153,7 @@ export default function App() {
 
         <div className="content-grid">
           <div className="center-col">
-            <div className="sec-header">
+            <div className="sec-header" ref={museumSectionRef}>
               <div>
                 <div className="sec-title">Dentro do museu</div>
                 <div className="sec-sub">Explore as alas do nosso acervo de sonhos não realizados.</div>
@@ -143,7 +180,17 @@ export default function App() {
 
             <div className="ideas-grid">
               {museumCards.map((card) => (
-                <div className="idea-card" key={card.name}>
+                <div className="idea-card" key={card.name} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => { setSelectedCandleIdea(card.name); memorialSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
+                  {candleCount[card.name] > 0 && (
+                    <div style={{ position: 'absolute', top: '8px', left: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 10 }}>
+                      {candleCount[card.name] > 1 && (
+                        <div style={{ background: 'var(--danger)', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', marginBottom: '-8px' }}>
+                          {candleCount[card.name]}
+                        </div>
+                      )}
+                      <div style={{ fontSize: '20px', filter: 'drop-shadow(0 0 4px rgba(255, 100, 100, 0.6))' }}>🕯️</div>
+                    </div>
+                  )}
                   <div
                     className="idea-thumb"
                     style={{
@@ -177,74 +224,6 @@ export default function App() {
               ))}
 
             </div>
-
-            <div className="divider"></div>
-
-            <div className="sec-header">
-              <div className="sec-title">Memorial de uma ideia</div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button type="button" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text2)', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>◀</button>
-                <button type="button" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text2)', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>▶</button>
-                <button type="button" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--danger)', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>💔</button>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '14px', marginBottom: '16px' }}>
-              <div
-                style={{
-                  width: '80px',
-                  height: '80px',
-                  borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #2a1a1a, #4a2828)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '36px',
-                  flexShrink: 0
-                }}
-              >
-                🕯️
-              </div>
-              <div>
-                <div className="memorial-name">Loja de Velas Aromáticas</div>
-                <div className="memorial-dates">2022 – 2022</div>
-                <div className="memorial-cause-label">Causa da morte</div>
-                <div className="memorial-cause-val">Pesquisa excessiva no Pinterest</div>
-                <div className="memorial-quote">"Só mais uma ideia que poderia ter mudado tudo."</div>
-              </div>
-            </div>
-
-            <div className="memorial-tabs">
-              {['Sobre', 'Linha do Tempo', 'Relíquias', 'Estatísticas'].map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  className={`mem-tab ${activeMemTab === tab ? 'active' : ''}`}
-                  onClick={() => setActiveMemTab(tab)}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-
-            <div className="memorial-cols">
-              <div>
-                <div className="mem-col-title">Biografia</div>
-                <div className="mem-item">Nasceu de um surto de criatividade numa madrugada de domingo. Teve um início promissor, nome, logo, moodboard e até público-alvo imaginário.</div>
-              </div>
-              <div>
-                <div className="mem-col-title">Expectativa</div>
-                <div className="mem-item">💸 Independência financeira</div>
-                <div className="mem-item" style={{ marginTop: '4px' }}>🏷️ Marca autoral</div>
-                <div className="mem-item" style={{ marginTop: '4px' }}>🌿 Vida tranquila no campo</div>
-              </div>
-              <div>
-                <div className="mem-col-title">Realidade</div>
-                <div className="mem-item bad">✘ 0 vendas</div>
-                <div className="mem-item bad" style={{ marginTop: '4px' }}>✘ 14 abas abertas</div>
-                <div className="mem-item bad" style={{ marginTop: '4px' }}>✘ 3 carrinhos abandonados</div>
-              </div>
-            </div>
           </div>
 
           <div className="right-col">
@@ -277,11 +256,100 @@ export default function App() {
                 <div style={{ width: `${survivalPct}%`, height: '100%', background: 'linear-gradient(90deg, var(--danger), #e88000)', borderRadius: '8px', transition: 'width 0.8s ease' }}></div>
               </div>
             </div>
+
+            <div className="curator-card" style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '18px', marginBottom: '20px' }}>
+              <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '12px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Curadoria diz</div>
+              <div className="curator-wrap">
+                <div className="curator-face">🎭</div>
+                <div>
+                  <div className="curator-q">"Não é fracasso. É coleção. O museu sempre terá espaço para mais um sonho."</div>
+                  <div className="curator-sig">- Curadora do Caos</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
+        <div style={{ padding: '24px', borderTop: '1px solid var(--border)' }}>
+          <div className="sec-header" ref={memorialSectionRef}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div className="sec-title">Memorial de uma ideia</div>
+              {candleCount[selectedCandleIdea] > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(224, 96, 96, 0.2)', padding: '6px 12px', borderRadius: '20px' }}>
+                  <div style={{ fontSize: '16px' }}>🕯️</div>
+                  {candleCount[selectedCandleIdea] > 1 && (
+                    <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--danger)' }}>{candleCount[selectedCandleIdea]}</div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button type="button" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text2)', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>◀</button>
+              <button type="button" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text2)', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>▶</button>
+              <button type="button" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--danger)', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>💔</button>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '14px', marginBottom: '16px', position: 'relative' }}>
+              <div
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #2a1a1a, #4a2828)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '36px',
+                  flexShrink: 0
+                }}
+              >
+                {selectedIdea.icon}
+              </div>
+              <div>
+                <div className="memorial-name">{selectedIdea.name}</div>
+                <div className="memorial-dates">{selectedIdea.dates}</div>
+                <div className="memorial-cause-label">Causa da morte</div>
+                <div className="memorial-cause-val">{selectedIdea.cause}</div>
+                <div className="memorial-quote">"Só mais uma ideia que poderia ter mudado tudo."</div>
+              </div>
+            </div>
+
+            <div className="memorial-tabs">
+              {['Sobre', 'Linha do Tempo', 'Relíquias', 'Estatísticas', 'Conquistas'].map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  className={`mem-tab ${activeMemTab === tab ? 'active' : ''}`}
+                  onClick={() => setActiveMemTab(tab)}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            <div className="memorial-cols" style={{ background: activeMemTab === 'Sobre' ? 'var(--bg3)' : 'transparent', padding: activeMemTab === 'Sobre' ? '12px' : '0', margin: activeMemTab === 'Sobre' ? '8px' : '0', borderRadius: activeMemTab === 'Sobre' ? 'var(--radius-sm)' : '0', boxShadow: activeMemTab === 'Sobre' ? '0 0 20px rgba(155, 127, 244, 0.6), 0 0 40px rgba(155, 127, 244, 0.3)' : 'none', transition: 'all 0.2s' }}>
+              <div>
+                <div className="mem-col-title">Biografia</div>
+                <div className="mem-item">Nasceu de um surto de criatividade numa madrugada de domingo. Teve um início promissor, nome, logo, moodboard e até público-alvo imaginário.</div>
+              </div>
+              <div>
+                <div className="mem-col-title">Expectativa</div>
+                <div className="mem-item">💸 Independência financeira</div>
+                <div className="mem-item" style={{ marginTop: '4px' }}>🏷️ Marca autoral</div>
+                <div className="mem-item" style={{ marginTop: '4px' }}>🌿 Vida tranquila no campo</div>
+              </div>
+              <div>
+                <div className="mem-col-title">Realidade</div>
+                <div className="mem-item bad">✘ 0 vendas</div>
+                <div className="mem-item bad" style={{ marginTop: '4px' }}>✘ 14 abas abertas</div>
+                <div className="mem-item bad" style={{ marginTop: '4px' }}>✘ 3 carrinhos abandonados</div>
+              </div>
+            </div>
+        </div>
+
         <div className="bottom-grid">
-          <section className="bottom-sec">
+          <section className="bottom-sec" ref={timelineSectionRef} style={{ background: activeMemTab === 'Linha do Tempo' ? 'var(--bg3)' : 'transparent', padding: activeMemTab === 'Linha do Tempo' ? '12px' : '20px', margin: activeMemTab === 'Linha do Tempo' ? '8px' : '0', borderRadius: activeMemTab === 'Linha do Tempo' ? 'var(--radius-sm)' : '0', boxShadow: activeMemTab === 'Linha do Tempo' ? '0 0 20px rgba(155, 127, 244, 0.6), 0 0 40px rgba(155, 127, 244, 0.3)' : 'none', transition: 'all 0.2s' }}>
             <div className="sec-header">
               <div className="sec-title" style={{ fontSize: '14px' }}>Linha do tempo</div>
             </div>
@@ -295,7 +363,7 @@ export default function App() {
             </div>
           </section>
 
-          <section className="bottom-sec">
+          <section className="bottom-sec" ref={reliquiarySectionRef} style={{ background: activeMemTab === 'Relíquias' ? 'var(--bg3)' : 'transparent', padding: activeMemTab === 'Relíquias' ? '12px' : '20px', margin: activeMemTab === 'Relíquias' ? '8px' : '0', borderRadius: activeMemTab === 'Relíquias' ? 'var(--radius-sm)' : '0', boxShadow: activeMemTab === 'Relíquias' ? '0 0 20px rgba(155, 127, 244, 0.6), 0 0 40px rgba(155, 127, 244, 0.3)' : 'none', transition: 'all 0.2s' }}>
             <div className="sec-header">
               <div className="sec-title" style={{ fontSize: '14px' }}>Relíquias encontradas</div>
             </div>
@@ -308,7 +376,7 @@ export default function App() {
             <button className="btn-outline" type="button" style={{ width: '100%', marginTop: '12px', fontSize: '12px' }}>Ver todas as relíquias</button>
           </section>
 
-          <section className="bottom-sec">
+          <section className="bottom-sec" ref={rankingSectionRef} style={{ background: activeMemTab === 'Estatísticas' ? 'var(--bg3)' : 'transparent', padding: activeMemTab === 'Estatísticas' ? '12px' : '20px', margin: activeMemTab === 'Estatísticas' ? '8px' : '0', borderRadius: activeMemTab === 'Estatísticas' ? 'var(--radius-sm)' : '0', boxShadow: activeMemTab === 'Estatísticas' ? '0 0 20px rgba(155, 127, 244, 0.6), 0 0 40px rgba(155, 127, 244, 0.3)' : 'none', transition: 'all 0.2s' }}>
             <div className="sec-header">
               <div className="sec-title" style={{ fontSize: '14px' }}>Rankings do caos</div>
             </div>
@@ -332,7 +400,7 @@ export default function App() {
             <button className="btn-outline" type="button" style={{ width: '100%', marginTop: '8px', fontSize: '12px' }}>Ver ranking completo</button>
           </section>
 
-          <section className="bottom-sec">
+          <section className="bottom-sec" ref={achievementSectionRef} style={{ background: activeMemTab === 'Conquistas' ? 'var(--bg3)' : 'transparent', padding: activeMemTab === 'Conquistas' ? '12px' : '20px', margin: activeMemTab === 'Conquistas' ? '8px' : '0', borderRadius: activeMemTab === 'Conquistas' ? 'var(--radius-sm)' : '0', boxShadow: activeMemTab === 'Conquistas' ? '0 0 20px rgba(155, 127, 244, 0.6), 0 0 40px rgba(155, 127, 244, 0.3)' : 'none', transition: 'all 0.2s' }}>
             <div className="sec-header">
               <div className="sec-title" style={{ fontSize: '14px' }}>Conquistas desbloqueadas</div>
             </div>
@@ -343,25 +411,26 @@ export default function App() {
             <button className="btn-outline" type="button" style={{ width: '100%', marginTop: '4px', fontSize: '12px' }}>Ver todas conquistas</button>
           </section>
 
-          <section className="bottom-sec">
-            <div className="mem-col-title" style={{ marginBottom: '12px' }}>Curadoria diz</div>
-            <div className="curator-wrap">
-              <div className="curator-face">🎭</div>
-              <div>
-                <div className="curator-q">"Não é fracasso. É coleção. O museu sempre terá espaço para mais um sonho."</div>
-                <div className="curator-sig">- Curadora do Caos</div>
-              </div>
-            </div>
-          </section>
         </div>
 
         <div className="footer-row">
           <section className="footer-widget">
             <div className="footer-title">🕯️ Homenagear uma ideia</div>
             <div className="footer-sub">Preste sua homenagem a este projeto que partiu cedo demais.</div>
-            <div className="candle-row">
-              <input className="candle-input" type="text" placeholder="Deixe uma mensagem..." />
-              <button className="btn-primary" type="button" style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '8px 14px' }}>Acender velinha</button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <select
+                value={selectedCandleIdea}
+                onChange={(e) => setSelectedCandleIdea(e.target.value)}
+                className="form-select"
+                style={{ marginBottom: '0' }}
+              >
+                {museumCards.map((card) => (
+                  <option key={card.name} value={card.name}>
+                    {card.icon} {card.name}
+                  </option>
+                ))}
+              </select>
+              <button className="btn-primary" type="button" style={{ width: '100%', fontSize: '12px', padding: '8px 14px' }} onClick={handleLightCandle}>Acender velinha</button>
             </div>
           </section>
 
@@ -369,12 +438,6 @@ export default function App() {
             <div className="footer-title">📱 Compartilhar memorial</div>
             <div className="footer-sub">Mostre para o mundo o seu potencial desperdiçado.</div>
             <button className="btn-primary" type="button" style={{ fontSize: '12px' }}>📩 Gerar card para compartilhar</button>
-          </section>
-
-          <section className="footer-widget">
-            <div className="footer-title">💬 Mensagem da curadoria</div>
-            <div className="footer-sub">"Não é fracasso. É coleção. O museu sempre terá espaço para mais um sonho."</div>
-            <div style={{ fontSize: '11px', color: 'var(--text3)' }}>- Curadora do Caos</div>
           </section>
 
           <section className="footer-widget">
@@ -448,6 +511,64 @@ export default function App() {
       <FormModal isOpen={isFormModalOpen} onClose={closeModal}>
         <IdeaForm />
       </FormModal>
+
+      {isVideoModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+          onClick={() => setIsVideoModalOpen(false)}
+        >
+          <div
+            style={{
+              background: 'var(--bg)',
+              borderRadius: 'var(--radius)',
+              border: '1px solid var(--border)',
+              maxWidth: '800px',
+              width: '100%',
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '16px', fontWeight: '600' }}>🕯️ Homenagem a {selectedCandleIdea}</div>
+              <button
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text2)',
+                  fontSize: '20px',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setIsVideoModalOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ padding: '20px', flex: 1, overflow: 'auto' }}>
+              <video
+                width="100%"
+                height="500"
+                controls
+                autoPlay
+                style={{ borderRadius: 'var(--radius-sm)' }}
+              >
+                <source src="/src/images/Firefly A memorial candle slowly burning in a luxury dark museum. The golden flame flickers naturall.mp4" type="video/mp4" />
+                Seu navegador não suporta vídeo.
+              </video>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
