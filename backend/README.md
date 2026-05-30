@@ -20,6 +20,7 @@ copy .env.example .env
 ```
 
 Edite o `.env` e adicione sua chave do Gemini e dados SMTP:
+
 ```env
 PORT=3001
 GEMINI_API_KEY=sua_chave_aqui
@@ -42,15 +43,19 @@ npm start      # produção
 ## 🛣️ API Endpoints
 
 ### `GET /health`
+
 Health check do servidor.
 
 ### `POST /api/analisar-ideia`
+
 Analisa uma ideia abandonada.
 
 ### `POST /api/assinar-alertas`
+
 Assina alertas do museu e envia e-mail de confirmação.
 
 **Request:**
+
 ```json
 {
   "email": "visitante@exemplo.com"
@@ -58,6 +63,7 @@ Assina alertas do museu e envia e-mail de confirmação.
 ```
 
 **Request:**
+
 ```json
 {
   "nome": "App de delivery de sonhos",
@@ -68,6 +74,7 @@ Assina alertas do museu e envia e-mail de confirmação.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -91,15 +98,15 @@ curl -X POST http://localhost:3001/api/analisar-ideia ^
 
 ```javascript
 // Frontend: src/services/api.js
-const API_URL = 'http://localhost:3001';
+const API_URL = "http://localhost:3001";
 
 export async function analyzeIdea(ideaData) {
   const response = await fetch(`${API_URL}/api/analisar-ideia`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(ideaData)
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(ideaData),
   });
-  
+
   const data = await response.json();
   return data.data;
 }

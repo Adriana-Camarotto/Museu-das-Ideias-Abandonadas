@@ -1,18 +1,18 @@
 /**
  * MUSEU DAS IDEIAS ABANDONADAS - Backend API
- * 
+ *
  * Servidor Express que atua como ponte entre o frontend React
  * e a API do Google Gemini para análise de ideias abandonadas.
- * 
+ *
  * @author Backend Sênior
  * @version 1.0.0
  */
 
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import nodemailer from 'nodemailer';
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import nodemailer from "nodemailer";
 
 // Carrega variáveis de ambiente do arquivo .env
 dotenv.config();
@@ -27,30 +27,26 @@ app.use(express.json()); // Parse de JSON no body das requisições
 
 // Inicializa o cliente do Google Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 async function sendSubscriptionEmail(email) {
-  const {
-    SMTP_HOST,
-    SMTP_PORT,
-    SMTP_SECURE,
-    SMTP_USER,
-    SMTP_PASS,
-    MAIL_FROM,
-  } = process.env;
+  const { SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS, MAIL_FROM } =
+    process.env;
 
   if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS || !MAIL_FROM) {
-    throw new Error('Configuracao de e-mail incompleta no servidor (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_FROM).');
+    throw new Error(
+      "Configuracao de e-mail incompleta no servidor (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_FROM).",
+    );
   }
 
   const transporter = nodemailer.createTransport({
     host: SMTP_HOST,
     port: Number(SMTP_PORT),
-    secure: String(SMTP_SECURE).toLowerCase() === 'true',
+    secure: String(SMTP_SECURE).toLowerCase() === "true",
     auth: {
       user: SMTP_USER,
       pass: SMTP_PASS,
@@ -60,8 +56,8 @@ async function sendSubscriptionEmail(email) {
   await transporter.sendMail({
     from: MAIL_FROM,
     to: email,
-    subject: 'Confirmacao de assinatura - Museu das Ideias Abandonadas',
-    text: 'Sua assinatura foi confirmada. A Curadoria do Caos vai te enviar os proximos alertas do museu.',
+    subject: "Confirmacao de assinatura - Museu das Ideias Abandonadas",
+    text: "Sua assinatura foi confirmada. A Curadoria do Caos vai te enviar os proximos alertas do museu.",
     html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #221a35;">
         <h2 style="margin-bottom: 8px;">Assinatura confirmada</h2>
@@ -75,27 +71,27 @@ async function sendSubscriptionEmail(email) {
 /**
  * Rota de health check para verificar se o servidor está rodando
  */
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    message: 'O Museu das Ideias Abandonadas está de portas abertas!' 
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    message: "O Museu das Ideias Abandonadas está de portas abertas!",
   });
 });
 
 /**
  * POST /api/analisar-ideia
- * 
+ *
  * Endpoint principal que recebe dados de uma ideia abandonada
  * e retorna uma análise sarcástica e poética da IA.
- * 
+ *
  * @body {string} nome - Nome da ideia abandonada
  * @body {string} categoria - Categoria da ideia (ex: app, startup, projeto pessoal)
  * @body {number} empolgacao - Nível de empolgação inicial (1-5)
  * @body {string} motivo - Motivo do abandono
- * 
+ *
  * @returns {object} Análise da IA com survival_percentage, cause_of_death_summary e ai_verdict
  */
-app.post('/api/analisar-ideia', async (req, res) => {
+app.post("/api/analisar-ideia", async (req, res) => {
   try {
     // Extrai dados do corpo da requisição
     const { nome, categoria, empolgacao, motivo } = req.body;
@@ -103,14 +99,16 @@ app.post('/api/analisar-ideia', async (req, res) => {
     // Validação básica dos campos obrigatórios
     if (!nome || !categoria || !empolgacao || !motivo) {
       return res.status(400).json({
-        error: 'Dados incompletos. Até ideias abandonadas merecem informações completas!'
+        error:
+          "Dados incompletos. Até ideias abandonadas merecem informações completas!",
       });
     }
 
     // Validação do range de empolgação
     if (empolgacao < 1 || empolgacao > 5) {
       return res.status(400).json({
-        error: 'A empolgação deve estar entre 1 e 5. Nem tudo na vida é extremo!'
+        error:
+          "A empolgação deve estar entre 1 e 5. Nem tudo na vida é extremo!",
       });
     }
 
@@ -139,17 +137,17 @@ Seja criativa, poética e levemente cruel - mas sempre termine com uma nota de e
 `;
 
     // Envia o prompt para o modelo Gemini
-    console.log('🤖 Enviando ideia para análise da Curadora do Caos...');
+    console.log("🤖 Enviando ideia para análise da Curadora do Caos...");
     const result = await model.generateContent(prompt);
     const response = await result.response;
     let aiText = response.text();
 
-    console.log('📥 Resposta bruta da IA:', aiText);
+    console.log("📥 Resposta bruta da IA:", aiText);
 
     // Remove possíveis marcações markdown que a IA possa ter adicionado
     aiText = aiText
-      .replace(/```json\n?/g, '')
-      .replace(/```\n?/g, '')
+      .replace(/```json\n?/g, "")
+      .replace(/```\n?/g, "")
       .trim();
 
     // Faz o parse do JSON retornado pela IA
@@ -157,33 +155,34 @@ Seja criativa, poética e levemente cruel - mas sempre termine com uma nota de e
 
     // Validação da estrutura da resposta
     if (
-      typeof aiAnalysis.survival_percentage !== 'number' ||
-      typeof aiAnalysis.cause_of_death_summary !== 'string' ||
-      typeof aiAnalysis.ai_verdict !== 'string'
+      typeof aiAnalysis.survival_percentage !== "number" ||
+      typeof aiAnalysis.cause_of_death_summary !== "string" ||
+      typeof aiAnalysis.ai_verdict !== "string"
     ) {
-      throw new Error('Resposta da IA em formato inválido');
+      throw new Error("Resposta da IA em formato inválido");
     }
 
     // Retorna a análise limpa para o frontend
-    console.log('✅ Análise concluída com sucesso!');
+    console.log("✅ Análise concluída com sucesso!");
     res.status(200).json({
       success: true,
       data: {
         survival_percentage: aiAnalysis.survival_percentage,
         cause_of_death_summary: aiAnalysis.cause_of_death_summary,
-        ai_verdict: aiAnalysis.ai_verdict
-      }
+        ai_verdict: aiAnalysis.ai_verdict,
+      },
     });
-
   } catch (error) {
     // Log do erro para debugging
-    console.error('❌ Erro ao processar ideia:', error);
+    console.error("❌ Erro ao processar ideia:", error);
 
     // Retorna erro com mensagem temática
     res.status(500).json({
       success: false,
-      error: 'A Curadora do Caos teve um colapso existencial tentando processar tanto fracasso de uma vez. Tente novamente em breve.',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error:
+        "A Curadora do Caos teve um colapso existencial tentando processar tanto fracasso de uma vez. Tente novamente em breve.",
+      details:
+        process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 });
@@ -194,14 +193,14 @@ Seja criativa, poética e levemente cruel - mas sempre termine com uma nota de e
  * Assina um e-mail para receber alertas do museu e envia
  * um e-mail de confirmacao para o usuario.
  */
-app.post('/api/assinar-alertas', async (req, res) => {
+app.post("/api/assinar-alertas", async (req, res) => {
   try {
-    const email = (req.body?.email || '').trim();
+    const email = (req.body?.email || "").trim();
 
     if (!email || !isValidEmail(email)) {
       return res.status(400).json({
         success: false,
-        error: 'Forneca um e-mail valido para assinar os alertas.'
+        error: "Forneca um e-mail valido para assinar os alertas.",
       });
     }
 
@@ -209,15 +208,17 @@ app.post('/api/assinar-alertas', async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'E-mail de confirmacao enviado com sucesso.'
+      message: "E-mail de confirmacao enviado com sucesso.",
     });
   } catch (error) {
-    console.error('❌ Erro ao enviar e-mail de assinatura:', error);
+    console.error("❌ Erro ao enviar e-mail de assinatura:", error);
 
     return res.status(500).json({
       success: false,
-      error: 'Nao foi possivel enviar o e-mail de confirmacao. Verifique a configuracao de SMTP no backend.',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error:
+        "Nao foi possivel enviar o e-mail de confirmacao. Verifique a configuracao de SMTP no backend.",
+      details:
+        process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 });
@@ -227,7 +228,7 @@ app.post('/api/assinar-alertas', async (req, res) => {
  */
 app.use((req, res) => {
   res.status(404).json({
-    error: 'Esta rota também foi abandonada... assim como suas ideias! 💀'
+    error: "Esta rota também foi abandonada... assim como suas ideias! 💀",
   });
 });
 
@@ -241,7 +242,7 @@ app.listen(PORT, () => {
 ║     🏛️  MUSEU DAS IDEIAS ABANDONADAS - Backend API       ║
 ║                                                           ║
 ║     Servidor rodando em: http://localhost:${PORT}        ║
-║     Ambiente: ${process.env.NODE_ENV || 'development'}                      ║
+║     Ambiente: ${process.env.NODE_ENV || "development"}                      ║
 ║                                                           ║
 ║     Endpoints disponíveis:                                ║
 ║     • GET  /health                                        ║
@@ -253,11 +254,11 @@ app.listen(PORT, () => {
 });
 
 // Tratamento de erros não capturados
-process.on('unhandledRejection', (error) => {
-  console.error('❌ Erro não tratado:', error);
+process.on("unhandledRejection", (error) => {
+  console.error("❌ Erro não tratado:", error);
 });
 
-process.on('uncaughtException', (error) => {
-  console.error('❌ Exceção não capturada:', error);
+process.on("uncaughtException", (error) => {
+  console.error("❌ Exceção não capturada:", error);
   process.exit(1);
 });

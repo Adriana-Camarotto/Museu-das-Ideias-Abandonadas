@@ -3,7 +3,7 @@
  * Gerencia todas as requisições relacionadas a ideias abandonadas
  */
 
-import { API_ENDPOINTS } from '../config/api';
+import { API_ENDPOINTS } from "../config/api";
 
 /**
  * Envia uma ideia para análise da IA
@@ -18,22 +18,22 @@ import { API_ENDPOINTS } from '../config/api';
 export async function analyzeIdea(ideaData) {
   try {
     const response = await fetch(API_ENDPOINTS.analyzeIdea, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(ideaData)
+      body: JSON.stringify(ideaData),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'Erro ao analisar ideia');
+      throw new Error(data.error || "Erro ao analisar ideia");
     }
 
     return data.data; // Retorna apenas o objeto data
   } catch (error) {
-    console.error('Erro ao analisar ideia:', error);
+    console.error("Erro ao analisar ideia:", error);
     throw error;
   }
 }
@@ -47,7 +47,7 @@ export async function checkApiHealth() {
     const response = await fetch(API_ENDPOINTS.health);
     return response.ok;
   } catch (error) {
-    console.error('API offline:', error);
+    console.error("API offline:", error);
     return false;
   }
 }
@@ -60,25 +60,30 @@ export async function checkApiHealth() {
 export async function subscribeToAlerts(email) {
   try {
     const response = await fetch(API_ENDPOINTS.subscribeAlerts, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'Nao foi possivel assinar os alertas');
+      throw new Error(data.error || "Nao foi possivel assinar os alertas");
     }
 
     return data;
   } catch (error) {
-    console.error('Erro ao assinar alertas:', error);
+    console.error("Erro ao assinar alertas:", error);
 
-    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-      throw new Error('Nao foi possivel conectar ao backend (http://localhost:3001). Verifique se o servidor backend esta em execucao.');
+    if (
+      error instanceof TypeError &&
+      error.message.includes("Failed to fetch")
+    ) {
+      throw new Error(
+        "Nao foi possivel conectar ao backend (http://localhost:3001). Verifique se o servidor backend esta em execucao.",
+      );
     }
 
     throw error;
