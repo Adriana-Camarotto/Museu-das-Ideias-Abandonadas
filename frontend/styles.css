@@ -107,21 +107,28 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 9px 16px;
+        padding: 12px 14px;
+        margin: 0 8px 6px;
         cursor: pointer;
         color: var(--text2);
         font-size: 13px;
-        border-left: 2px solid transparent;
-        transition: all 0.2s;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        font-weight: 500;
       }
       .nav-item:hover {
         color: var(--text);
-        background: rgba(155, 127, 244, 0.08);
+        background: rgba(155, 127, 244, 0.15);
+        border-color: var(--purple2);
+        transform: translateX(2px);
       }
       .nav-item.active {
-        color: var(--purple3);
-        border-left-color: var(--purple);
-        background: rgba(155, 127, 244, 0.12);
+        color: #fff;
+        border-color: var(--purple);
+        background: linear-gradient(135deg, rgba(155, 127, 244, 0.25), rgba(124, 92, 232, 0.25));
+        box-shadow: 0 0 12px rgba(155, 127, 244, 0.3);
       }
       .nav-icon {
         font-size: 16px;
