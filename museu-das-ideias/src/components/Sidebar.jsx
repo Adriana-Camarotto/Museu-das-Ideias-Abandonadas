@@ -4,6 +4,7 @@
  */
 
 import ApiStatus from './ApiStatus';
+import Button from './Button';
 
 export default function Sidebar({ onNavigate }) {
   const menuItems = [
@@ -47,17 +48,14 @@ export default function Sidebar({ onNavigate }) {
         <ul className="space-y-2 text-sm">
           {menuItems.map((item) => (
             <li key={item.id}>
-              <button
+              <Button
                 onClick={() => onNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                  item.active
-                    ? 'bg-[rgba(180,140,255,0.1)] text-[#c4a8ff]'
-                    : 'text-[#a898c8] hover:bg-[rgba(180,140,255,0.05)]'
-                }`}
+                variant="nav"
+                active={item.active}
               >
                 <span>{item.icon}</span>
                 <span>{item.label}</span>
-              </button>
+              </Button>
             </li>
           ))}
         </ul>

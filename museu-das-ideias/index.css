@@ -1,0 +1,186 @@
+:root {
+  --bg: #0f0b18;
+  --bg2: #161020;
+  --bg3: #1e1630;
+  --card: #1a1328;
+  --card2: #211940;
+  --border: rgba(180, 140, 255, 0.15);
+  --border2: rgba(180, 140, 255, 0.25);
+  --purple: #9b7ff4;
+  --purple2: #7c5ce8;
+  --purple3: #c4a8ff;
+  --gold: #e8b86d;
+  --gold2: #f5d08a;
+  --text: #e8e0f5;
+  --text2: #a898c8;
+  --text3: #6a5c8a;
+  --danger: #e06060;
+  --success: #60b88a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--purple2);
+  border-radius: 3px;
+}
+
+/* Pseudo elements and animations that are not practical in utility classes */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.visitor-dot {
+  animation: pulse 2s infinite;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse at 70% 50%,
+      rgba(120, 80, 220, 0.18) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse at 20% 80%,
+      rgba(80, 40, 160, 0.12) 0%,
+      transparent 50%
+    );
+}
+
+.hero-tag::before {
+  content: "";
+  display: block;
+  width: 20px;
+  height: 1px;
+  background: var(--gold);
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+
+/* Dynamic states controlled by JS class toggles */
+.nav-item:hover {
+  color: var(--text);
+  background: rgba(155, 127, 244, 0.08);
+}
+
+.nav-item.active {
+  color: var(--purple3);
+  border-left-color: var(--purple);
+  background: rgba(155, 127, 244, 0.12);
+}
+
+.filter-chip:hover {
+  border-color: var(--purple);
+  color: var(--purple3);
+}
+
+.filter-chip.active {
+  background: var(--purple2);
+  border-color: var(--purple2);
+  color: #fff;
+}
+
+.mem-tab.active {
+  color: var(--purple3);
+  border-bottom-color: var(--purple);
+}
+
+.rank-tab.active {
+  background: var(--purple2);
+  border-color: var(--purple2);
+  color: #fff;
+}
+
+.emoji-btn:hover,
+.emoji-btn.sel {
+  opacity: 1;
+  filter: none;
+  transform: scale(1.2);
+}
+
+.tl-dot.rip {
+  background: var(--danger);
+}
+
+.tl-text strong {
+  color: var(--text);
+}
+
+/* Small behavior/detail rules still used by inline markup */
+.hero p {
+  color: var(--text2);
+  font-size: 14px;
+  line-height: 1.65;
+  max-width: 400px;
+  margin-bottom: 24px;
+}
+
+.btn-primary:hover {
+  background: #8e6de0;
+  transform: translateY(-1px);
+}
+
+.btn-outline:hover {
+  border-color: var(--purple);
+  color: var(--text);
+}
+
+.btn-submit:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.add-card:hover {
+  border-color: var(--purple);
+  color: var(--purple3);
+  background: rgba(155, 127, 244, 0.05);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus,
+.footer-input:focus,
+.candle-input:focus {
+  border-color: var(--purple);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder,
+.footer-input::placeholder,
+.candle-input::placeholder {
+  color: var(--text3);
+}
+
+.bottom-sec:last-child,
+.footer-widget:last-child {
+  border-right: none;
+}

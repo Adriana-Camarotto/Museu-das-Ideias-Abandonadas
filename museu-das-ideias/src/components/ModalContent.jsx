@@ -3,6 +3,8 @@
  * Centraliza os textos e estruturas dos diferentes modais
  */
 
+import Panel from './Panel';
+
 export const MODAL_CONTENTS = {
   about: {
     title: 'Sobre o Museu',
@@ -19,12 +21,12 @@ export const MODAL_CONTENTS = {
           todos os fracassos são bem-vindos.
         </p>
 
-        <div className="bg-[rgba(180,140,255,0.05)] border border-[rgba(180,140,255,0.15)] rounded-lg p-4 my-4">
+        <Panel className="p-4 my-4">
           <p className="text-sm">
             <strong>Nossa Missão:</strong> Transformar o fracasso em arte, o abandono em sabedoria 
             e a procrastinação em uma experiência memorável.
           </p>
-        </div>
+        </Panel>
 
         <p>
           Usando inteligência artificial e um toque de sarcasmo existencial, a <strong>Curadora do Caos</strong> 
@@ -47,29 +49,29 @@ export const MODAL_CONTENTS = {
         </p>
 
         <div className="space-y-4">
-          <div className="bg-[rgba(180,140,255,0.05)] border border-[rgba(180,140,255,0.15)] rounded-lg p-4">
+          <Panel className="p-4">
             <h3 className="text-[#c4a8ff] font-semibold mb-2">💀 Ideias Catalogadas</h3>
             <p className="text-sm">
               Mais de 1.247 ideias já passaram pela análise da Curadora do Caos, cada uma com sua 
               própria história de fracasso e aprendizado.
             </p>
-          </div>
+          </Panel>
 
-          <div className="bg-[rgba(180,140,255,0.05)] border border-[rgba(180,140,255,0.15)] rounded-lg p-4">
+          <Panel className="p-4">
             <h3 className="text-[#c4a8ff] font-semibold mb-2">🎭 Categorias</h3>
             <p className="text-sm">
               Apps, Startups, Projetos Pessoais, SaaS, E-commerce, Jogos, Blogs e muito mais. 
               Cada categoria tem seu próprio espaço no museu.
             </p>
-          </div>
+          </Panel>
 
-          <div className="bg-[rgba(180,140,255,0.05)] border border-[rgba(180,140,255,0.15)] rounded-lg p-4">
+          <Panel className="p-4">
             <h3 className="text-[#c4a8ff] font-semibold mb-2">🔮 Análise por IA</h3>
             <p className="text-sm">
               Cada ideia recebe uma análise profunda: porcentagem de sobrevivência, causa da morte 
               e um veredito sarcástico mas reconfortante.
             </p>
-          </div>
+          </Panel>
         </div>
 
         <p className="text-xs text-[#6a5c8a] italic mt-4">

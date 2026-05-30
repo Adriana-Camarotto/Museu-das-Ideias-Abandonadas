@@ -3,6 +3,8 @@
  * Mostra a porcentagem de sobrevivência, causa da morte e veredito
  */
 
+import Panel from './Panel';
+
 export default function AnalysisResult({ data, ideaName }) {
   const { survival_percentage, cause_of_death_summary, ai_verdict } = data;
 
@@ -52,7 +54,7 @@ export default function AnalysisResult({ data, ideaName }) {
       </div>
 
       {/* Causa da Morte */}
-      <div className="bg-[rgba(180,140,255,0.05)] border border-[rgba(180,140,255,0.15)] rounded-lg p-6 mb-6">
+      <Panel className="p-6 mb-6">
         <div className="flex items-start gap-3">
           <span className="text-2xl">💀</span>
           <div className="flex-1">
@@ -64,10 +66,10 @@ export default function AnalysisResult({ data, ideaName }) {
             </p>
           </div>
         </div>
-      </div>
+      </Panel>
 
       {/* Veredito da IA */}
-      <div className="bg-[rgba(180,140,255,0.05)] border border-[rgba(180,140,255,0.15)] rounded-lg p-6">
+      <Panel className="p-6">
         <div className="flex items-start gap-3">
           <span className="text-2xl">🎭</span>
           <div className="flex-1">
@@ -79,7 +81,7 @@ export default function AnalysisResult({ data, ideaName }) {
             </p>
           </div>
         </div>
-      </div>
+      </Panel>
 
       {/* Footer */}
       <div className="mt-6 pt-6 border-t border-[rgba(180,140,255,0.15)] text-center">

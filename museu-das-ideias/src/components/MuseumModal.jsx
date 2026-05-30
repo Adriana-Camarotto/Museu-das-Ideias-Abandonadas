@@ -4,6 +4,7 @@
  */
 
 import { useEffect } from 'react';
+import Button from './Button';
 
 export default function MuseumModal({ isOpen, onClose, title, children }) {
   // Fecha o modal ao pressionar ESC
@@ -56,13 +57,13 @@ export default function MuseumModal({ isOpen, onClose, title, children }) {
                     </div>
                     
                     {/* Botão Fechar */}
-                    <button
+                    <Button
                       onClick={onClose}
-                      className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-[rgba(180,140,255,0.1)] text-[#c4a8ff] hover:bg-[rgba(180,140,255,0.2)] transition-colors"
+                      variant="icon"
                       aria-label="Fechar modal"
                     >
                       ✕
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
