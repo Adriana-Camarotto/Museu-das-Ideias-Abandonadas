@@ -68,11 +68,46 @@ app.use('/api/ideas', ideasRoutes);
 // Rotas de IA
 app.use('/ai', aiRoutes);
 
-// Compatibilidade com endpoint antigo
-app.post('/api/analisar-ideia', (req, res, next) => {
-  // Redirecionar para novo endpoint
-  req.url = '/api/ideas/analyze';
-  ideasRoutes(req, res, next);
+// Compatibilidade com endpoint antigo - POST /api/analisar-ideia
+app.post('/api/analisar-ideia', async (req, res, next) => {
+  try {
+    const { nome, categoria, empolgacao, motivo } = req.body;
+
+    // Validação
+    if (!nome || !categoria || !empolgacao || !motivo) {
+      return res.status(400).json({
+        success: false,
+        error: 'Dados incompletos. Até ideias abandonadas merecem informações completas!',
+      });
+    }
+
+    if (empolgacao < 1 || empolgacao > 5) {
+      return res.status(400).json({
+        success: false,
+        error: 'A empolgação deve estar entre 1 e 5. Nem tudo na vida é extremo!',
+      });
+    }
+
+    console.log('📨 Requisição recebida (endpoint antigo):', { nome, categoria, empolgacao, motivo });
+
+    // Chamar controller de ideias
+    const { getGeminiService } = await import('./services/GeminiService.js');
+    const geminiService = getGeminiService();
+    const analysis = await geminiService.analyzeIdea({
+      nome,
+      categoria,
+      empolgacao,
+      motivo,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: analysis,
+    });
+  } catch (error) {
+    console.error('❌ Erro ao analisar ideia:', error.message);
+    next(error);
+  }
 });
 
 // ============================================
