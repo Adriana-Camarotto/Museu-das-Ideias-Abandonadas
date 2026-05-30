@@ -5,9 +5,13 @@
 
 import { useState } from 'react';
 import { analyzeIdea } from '../services/ideaService';
+import { validateIdeaData } from '../utils/validators';
+import { useMuseum } from '../hooks/useMuseum';
 import AnalysisResult from './AnalysisResult';
 
 export default function IdeaForm() {
+  const { setAnalysisResult, setAnalysisLoading, setAnalysisError } = useMuseum();
+  
   const [formData, setFormData] = useState({
     nome: '',
     categoria: '',
@@ -15,23 +19,41 @@ export default function IdeaForm() {
     motivo: ''
   });
   
-  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [result, setResult] = useState(null);
+  const [ideaId, setIdeaId] = useState(null);
+  const [validationErrors, setValidationErrors] = useState([]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setValidationErrors([]);
     setError(null);
     setResult(null);
+    setIdeaId(null);
+
+    // Validação local
+    const validation = validateIdeaData(formData);
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors);
+      return;
+    }
+
+    setLoading(true);
+    setAnalysisLoading(true);
 
     try {
       const analysis = await analyzeIdea(formData);
       setResult(analysis);
+      setIdeaId(analysis.id);
+      setAnalysisResult(analysis);
     } catch (err) {
-      setError(err.message);
+      const errorMessage = err.message || 'Erro ao analisar ideia';
+      setError(errorMessage);
+      setAnalysisError(errorMessage);
     } finally {
       setLoading(false);
+      setAnalysisLoading(false);
     }
   };
 
@@ -48,6 +70,120 @@ export default function IdeaForm() {
       nome: '',
       categoria: '',
       empolgacao: 3,
+      motivo: ''
+    });
+    setError(null);
+    setResult(null);
+    setValidationErrors([]);
+  };
+
+  return (
+    <div className="form-container">
+      <form onSubmit={handleSubmit} className="idea-form">
+        <h2>Envie sua Ideia Abandonada</h2>
+
+        {validationErrors.length > 0 && (
+          <div className="error-box">
+            <ul>
+              {validationErrors.map((err, idx) => (
+                <li key={idx}>{err}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {error && (
+          <div className="error-box">
+            <p>{error}</p>
+          </div>
+        )}
+
+        <div className="form-group">
+          <label htmlFor="nome">Nome da Ideia *</label>
+          <input
+            id="nome"
+            type="text"
+            name="nome"
+            value={formData.nome}
+            onChange={handleChange}
+            placeholder="Ex: App de Delivery de Comida"
+            disabled={loading}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="categoria">Categoria *</label>
+          <select
+            id="categoria"
+            name="categoria"
+            value={formData.categoria}
+            onChange={handleChange}
+            disabled={loading}
+          >
+            <option value="">Selecione uma categoria</option>
+            <option value="App">App</option>
+            <option value="Startup">Startup</option>
+            <option value="Projeto Pessoal">Projeto Pessoal</option>
+            <option value="Negócio">Negócio</option>
+            <option value="Hobby">Hobby</option>
+            <option value="Estudo">Estudo</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="empolgacao">Empolgação Inicial (1-5) *</label>
+          <div className="mood-selector">
+            {[1, 2, 3, 4, 5].map(num => (
+              <button
+                key={num}
+                type="button"
+                className={`mood-btn ${formData.empolgacao === num ? 'active' : ''}`}
+                onClick={() => setFormData(prev => ({ ...prev, empolgacao: num }))}
+                disabled={loading}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="motivo">Motivo do Abandono *</label>
+          <textarea
+            id="motivo"
+            name="motivo"
+            value={formData.motivo}
+            onChange={handleChange}
+            placeholder="Por que você abandonou essa ideia?"
+            rows="4"
+            disabled={loading}
+          />
+        </div>
+
+        <div className="form-actions">
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={loading}
+          >
+            {loading ? 'Analisando...' : 'Analisar Ideia'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleReset}
+            disabled={loading}
+          >
+            Limpar
+          </button>
+        </div>
+      </form>
+
+      {result && <AnalysisResult result={result} ideaId={ideaId} ideaNome={formData.nome} />}
+    </div>
+  );
+}
       motivo: ''
     });
     setResult(null);

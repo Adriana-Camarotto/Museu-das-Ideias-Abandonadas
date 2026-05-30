@@ -4,9 +4,12 @@ import './index.css'
 import '../styles.css'
 
 import App from './App.jsx'
+import { MuseumProvider } from './context/MuseumContext'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <MuseumProvider>
+      <App />
+    </MuseumProvider>
   </StrictMode>,
 )

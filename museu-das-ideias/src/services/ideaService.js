@@ -31,7 +31,11 @@ export async function analyzeIdea(ideaData) {
       throw new Error(data.error || "Erro ao analisar ideia");
     }
 
-    return data.data; // Retorna apenas o objeto data
+    // Retornar com ID da ideia
+    return {
+      ...data.data,
+      id: data.data.id || `idea_${Date.now()}`,
+    };
   } catch (error) {
     console.error("Erro ao analisar ideia:", error);
     throw error;

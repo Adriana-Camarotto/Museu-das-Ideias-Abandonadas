@@ -3,8 +3,12 @@
  * Mostra a porcentagem de sobrevivência, causa da morte e veredito
  */
 
-export default function AnalysisResult({ data, ideaName }) {
+import { useState } from 'react';
+import IdeaActions from './IdeaActions';
+
+export default function AnalysisResult({ data, ideaName, ideaId, onActionComplete }) {
   const { survival_percentage, cause_of_death_summary, ai_verdict } = data;
+  const [showActions, setShowActions] = useState(true);
 
   // Define a cor baseada na porcentagem de sobrevivência
   const getColorClass = (percentage) => {
@@ -67,7 +71,7 @@ export default function AnalysisResult({ data, ideaName }) {
       </div>
 
       {/* Veredito da IA */}
-      <div className="bg-[rgba(180,140,255,0.05)] border border-[rgba(180,140,255,0.15)] rounded-lg p-6">
+      <div className="bg-[rgba(180,140,255,0.05)] border border-[rgba(180,140,255,0.15)] rounded-lg p-6 mb-6">
         <div className="flex items-start gap-3">
           <span className="text-2xl">🎭</span>
           <div className="flex-1">
@@ -80,6 +84,15 @@ export default function AnalysisResult({ data, ideaName }) {
           </div>
         </div>
       </div>
+
+      {/* Ações */}
+      {showActions && ideaId && (
+        <IdeaActions 
+          ideaId={ideaId} 
+          ideaNome={ideaName}
+          onActionComplete={onActionComplete}
+        />
+      )}
 
       {/* Footer */}
       <div className="mt-6 pt-6 border-t border-[rgba(180,140,255,0.15)] text-center">
