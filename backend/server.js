@@ -34,17 +34,30 @@ app.use(express.json()); // Parse de JSON no body das requisições
 // Servir arquivos estáticos do frontend
 app.use(express.static(frontendPath));
 
-// Inicializa o cliente do Google Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+// Inicializa o cliente do Google Gemini com validação
+let genAI;
+let model;
+
+try {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY não configurada no arquivo .env');
+  }
+  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  console.log('✅ Google Gemini inicializado com sucesso');
+} catch (error) {
+  console.error('❌ Erro ao inicializar Gemini:', error.message);
+  process.exit(1);
+}
 
 /**
  * Rota de health check para verificar se o servidor está rodando
  */
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    message: 'O Museu das Ideias Abandonadas está de portas abertas!' 
+    message: 'O Museu das Ideias Abandonadas está de portas abertas!',
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -66,8 +79,11 @@ app.post('/api/analisar-ideia', async (req, res) => {
     // Extrai dados do corpo da requisição
     const { nome, categoria, empolgacao, motivo } = req.body;
 
+    console.log('📨 Requisição recebida:', { nome, categoria, empolgacao, motivo });
+
     // Validação básica dos campos obrigatórios
     if (!nome || !categoria || !empolgacao || !motivo) {
+      console.warn('⚠️ Validação falhou: campos incompletos');
       return res.status(400).json({
         error: 'Dados incompletos. Até ideias abandonadas merecem informações completas!'
       });
@@ -75,6 +91,7 @@ app.post('/api/analisar-ideia', async (req, res) => {
 
     // Validação do range de empolgação
     if (empolgacao < 1 || empolgacao > 5) {
+      console.warn('⚠️ Validação falhou: empolgação fora do range');
       return res.status(400).json({
         error: 'A empolgação deve estar entre 1 e 5. Nem tudo na vida é extremo!'
       });
@@ -105,12 +122,12 @@ Seja criativa, poética e levemente cruel - mas sempre termine com uma nota de e
 `;
 
     // Envia o prompt para o modelo Gemini
-    console.log('🤖 Enviando ideia para análise da Curadora do Caos...');
+    console.log(`🤖 Enviando para Gemini: "${nome}" (${categoria})`);
     const result = await model.generateContent(prompt);
-    const response = await result.response;
+    const response = result.response;
     let aiText = response.text();
 
-    console.log('📥 Resposta bruta da IA:', aiText);
+    console.log('📥 Resposta da IA recebida (primeiros 200 caracteres):', aiText.substring(0, 200));
 
     // Remove possíveis marcações markdown que a IA possa ter adicionado
     aiText = aiText
@@ -118,8 +135,18 @@ Seja criativa, poética e levemente cruel - mas sempre termine com uma nota de e
       .replace(/```\n?/g, '')
       .trim();
 
+    console.log('🔍 Resposta após limpeza:', aiText);
+
     // Faz o parse do JSON retornado pela IA
-    const aiAnalysis = JSON.parse(aiText);
+    let aiAnalysis;
+    try {
+      aiAnalysis = JSON.parse(aiText);
+      console.log('✅ JSON parseado com sucesso');
+    } catch (parseError) {
+      console.error('❌ Erro ao fazer parse do JSON:', parseError.message);
+      console.error('Texto que falhou:', aiText);
+      throw new Error(`Erro ao fazer parse do JSON: ${parseError.message}`);
+    }
 
     // Validação da estrutura da resposta
     if (
@@ -127,11 +154,12 @@ Seja criativa, poética e levemente cruel - mas sempre termine com uma nota de e
       typeof aiAnalysis.cause_of_death_summary !== 'string' ||
       typeof aiAnalysis.ai_verdict !== 'string'
     ) {
+      console.error('❌ Estrutura inválida:', aiAnalysis);
       throw new Error('Resposta da IA em formato inválido');
     }
 
     // Retorna a análise limpa para o frontend
-    console.log('✅ Análise concluída com sucesso!');
+    console.log(`✅ Análise concluída: ${aiAnalysis.survival_percentage}% de sobrevivência`);
     res.status(200).json({
       success: true,
       data: {
@@ -143,7 +171,8 @@ Seja criativa, poética e levemente cruel - mas sempre termine com uma nota de e
 
   } catch (error) {
     // Log do erro para debugging
-    console.error('❌ Erro ao processar ideia:', error);
+    console.error('❌ Erro ao processar ideia:', error.message);
+    console.error('Stack:', error.stack);
 
     // Retorna erro com mensagem temática
     res.status(500).json({
@@ -182,8 +211,10 @@ app.listen(PORT, () => {
 ║     Ambiente: ${process.env.NODE_ENV || 'development'}                      ║
 ║                                                           ║
 ║     Endpoints disponíveis:                                ║
-║     • GET  /health                                        ║
+║     • GET  /api/health                                    ║
 ║     • POST /api/analisar-ideia                            ║
+║                                                           ║
+║     Frontend: http://localhost:5173 (desenvolvimento)     ║
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
   `);
