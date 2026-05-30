@@ -3,8 +3,6 @@
  * Gerencia todas as requisições relacionadas a ideias abandonadas
  */
 
-import { API_ENDPOINTS } from '../config/api';
-
 /**
  * Envia uma ideia para análise da IA
  * @param {Object} ideaData - Dados da ideia
@@ -17,8 +15,10 @@ import { API_ENDPOINTS } from '../config/api';
  */
 export async function analyzeIdea(ideaData) {
   try {
-    // Usar URL relativa para funcionar em qualquer ambiente
     const endpoint = '/api/analisar-ideia';
+    
+    console.log('📤 Enviando requisição para:', endpoint);
+    console.log('📋 Dados:', ideaData);
     
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -28,15 +28,19 @@ export async function analyzeIdea(ideaData) {
       body: JSON.stringify(ideaData)
     });
 
+    console.log('📥 Resposta recebida - Status:', response.status);
+
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'Erro ao analisar ideia');
+      console.error('❌ Erro na resposta:', data);
+      throw new Error(data.error || `Erro ${response.status}: Falha ao analisar ideia`);
     }
 
+    console.log('✅ Análise recebida com sucesso:', data.data);
     return data.data; // Retorna apenas o objeto data
   } catch (error) {
-    console.error('Erro ao analisar ideia:', error);
+    console.error('❌ Erro ao analisar ideia:', error);
     throw error;
   }
 }
@@ -47,11 +51,17 @@ export async function analyzeIdea(ideaData) {
  */
 export async function checkApiHealth() {
   try {
-    // Usar URL relativa para funcionar em qualquer ambiente
-    const response = await fetch('/api/health');
-    return response.ok;
+    const response = await fetch('/api/health', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    const isOnline = response.ok;
+    console.log('🏥 Health check:', isOnline ? '✅ Online' : '❌ Offline');
+    return isOnline;
   } catch (error) {
-    console.error('API offline:', error);
+    console.error('❌ API offline:', error);
     return false;
   }
 }
