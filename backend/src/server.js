@@ -18,6 +18,7 @@ import { fileURLToPath } from 'url';
 
 import config from './config/environment.js';
 import errorHandler from './middleware/errorHandler.js';
+import { authMiddleware } from './middleware/authMiddleware.js';
 import ideasRoutes from './routes/ideas.js';
 import aiRoutes from './routes/ai.js';
 
@@ -142,17 +143,22 @@ app.listen(config.port, () => {
 ║                                                           ║
 ║     🏛️  MUSEU DAS IDEIAS ABANDONADAS - Backend API       ║
 ║                                                           ║
-║     Versão: 2.0.0 (Refatorado)                           ║
+║     Versão: 3.0.0 (FASE 3 - Autenticação Supabase)      ║
 ║     Servidor rodando em: http://localhost:${config.port}        ║
 ║     Ambiente: ${config.nodeEnv}                      ║
 ║                                                           ║
-║     Endpoints disponíveis:                                ║
-║     • GET  /api/health                                    ║
-║     • POST /api/ideas/analyze                             ║
-║     • POST /api/analisar-ideia (compatibilidade)          ║
-║     • POST /ai/analyze-idea                               ║
-║     • POST /ai/share-text                                 ║
-║     • POST /ai/epitaph                                    ║
+║     ✅ Autenticação Supabase Auth ativada                ║
+║     ✅ Proteção de rotas com JWT                         ║
+║     ✅ Persistência real no Supabase                     ║
+║     ✅ Sistema multi-tenant por usuário                  ║
+║                                                           ║
+║     Endpoints protegidos:                                 ║
+║     • POST /api/ideas/analyze (requer JWT)               ║
+║     • GET  /api/ideas (requer JWT)                       ║
+║     • GET  /api/ideas/:id (requer JWT)                   ║
+║     • POST /api/ideas/:id/honor (requer JWT)             ║
+║     • POST /api/ideas/:id/revive (requer JWT)            ║
+║     • GET  /api/ideas/stats/user (requer JWT)            ║
 ║                                                           ║
 ║     Frontend: ${config.frontendUrl}     ║
 ║                                                           ║
