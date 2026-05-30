@@ -1,13 +1,17 @@
 /**
  * Formulário para submissão de ideias abandonadas
  * Coleta dados do usuário e envia para análise da IA
+ * 
+ * Props:
+ * - onIdeaAdded: callback chamado quando uma ideia é criada com sucesso
+ *   Recebe a ideia formatada do backend para atualizar o estado do App
  */
 
 import { useState } from 'react';
 import { analyzeIdea } from '../services/ideaService';
 import AnalysisResult from './AnalysisResult';
 
-export default function IdeaForm() {
+export default function IdeaForm({ onIdeaAdded }) {
   const [formData, setFormData] = useState({
     nome: '',
     categoria: '',
@@ -28,6 +32,12 @@ export default function IdeaForm() {
     try {
       const analysis = await analyzeIdea(formData);
       setResult(analysis);
+      
+      // Chamar callback para adicionar ideia ao estado do App
+      // Isso faz a ideia aparecer instantaneamente no museu sem reload
+      if (onIdeaAdded && typeof onIdeaAdded === 'function') {
+        onIdeaAdded(analysis);
+      }
     } catch (err) {
       setError(err.message);
     } finally {

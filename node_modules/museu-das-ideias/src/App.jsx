@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import MuseumModal from './components/MuseumModal';
 import { MODAL_CONTENTS } from './components/ModalContent';
@@ -7,6 +7,7 @@ import FormModal from './components/FormModal';
 import { subscribeToAlerts } from './services/ideaService';
 
 export default function App() {
+  // Estado da UI
   const [activeModal, setActiveModal] = useState(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -18,8 +19,12 @@ export default function App() {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterFeedback, setNewsletterFeedback] = useState(null);
   const [newsletterLoading, setNewsletterLoading] = useState(false);
-  const [selectedCandleIdea, setSelectedCandleIdea] = useState('Loja de Velas Aromáticas');
   const [candleCount, setCandleCount] = useState({});
+
+  // Estado dinâmico das ideias (carregadas do backend)
+  const [ideas, setIdeas] = useState([]);
+  const [loadingIdeas, setLoadingIdeas] = useState(true);
+  const [selectedCandleIdea, setSelectedCandleIdea] = useState(null);
 
   const mainRef = useRef(null);
   const museumSectionRef = useRef(null);
@@ -29,15 +34,56 @@ export default function App() {
   const achievementSectionRef = useRef(null);
   const timelineSectionRef = useRef(null);
 
-  const museumCards = [
-    { icon: '🕯️', name: 'Loja de Velas Aromáticas', dates: '2022 – 2022', cause: 'Pesquisa excessiva no Pinterest' },
-    { icon: '🎬', name: 'Canal de Produtividade', dates: '2023 – 2023', cause: 'Editou o primeiro vídeo e desistiu' },
-    { icon: '🇩🇪', name: 'Curso de Alemão B1', dates: '2021 – 2021', cause: 'Duolingo burnout' },
-    { icon: '💪', name: 'Projeto Fitness', dates: '2022 – 2023', cause: 'Encontrou pão de alho' },
-    { icon: '🎙️', name: 'Podcast sobre Mindset', dates: '2023 – 2023', cause: 'Ninguém ouviu o episódio 1' },
-    { icon: '🎨', name: 'Aprender Aquarela', dates: '2022 – 2022', cause: 'Fase existencial' },
-    { icon: '🦄', name: 'Startup Inovadora', dates: '2024 – 2024', cause: 'Pitch pro espelho' }
-  ];
+  // Carrega ideias do backend ao montar o componente
+  // useEffect sem dependências = executa uma única vez ao montar
+  useEffect(() => {
+    const fetchIdeas = async () => {
+      try {
+        setLoadingIdeas(true);
+        const response = await fetch('http://localhost:3001/api/ideas', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            // Adicionar token JWT se disponível (será necessário quando autenticação estiver ativa)
+            // 'Authorization': `Bearer ${token}`
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao carregar ideias');
+        }
+
+        const data = await response.json();
+        
+        // Backend retorna { success: true, data: [...], pagination: {...} }
+        if (data.success && Array.isArray(data.data)) {
+          setIdeas(data.data);
+          // Define a primeira ideia como selecionada para o memorial
+          if (data.data.length > 0) {
+            setSelectedCandleIdea(data.data[0].nome);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar ideias:', error);
+        // Em caso de erro, mantém array vazio (sem ideias)
+        setIdeas([]);
+      } finally {
+        setLoadingIdeas(false);
+      }
+    };
+
+    fetchIdeas();
+  }, []); // Dependência vazia = executa apenas uma vez ao montar
+
+  // Callback para adicionar nova ideia ao estado quando IdeaForm submete com sucesso
+  // Recebe a ideia formatada do backend e adiciona ao topo da lista
+  const handleNewIdeaAdded = (novaIdeia) => {
+    setIdeas(prev => [novaIdeia, ...prev]);
+    // Se não havia ideias, define a primeira como selecionada
+    if (ideas.length === 0) {
+      setSelectedCandleIdea(novaIdeia.nome);
+    }
+  };
 
   const filters = ['Todas', 'Empreendedorismo', 'Estudos', 'Fitness', 'Hobbies', 'Criativas', 'Organização', 'Outros'];
   const survivalPcts = [7, 13, 19, 31, 48];
@@ -179,49 +225,46 @@ export default function App() {
             </div>
 
             <div className="ideas-grid">
-              {museumCards.map((card) => (
-                <div className="idea-card" key={card.name} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => { setSelectedCandleIdea(card.name); memorialSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
-                  {candleCount[card.name] > 0 && (
-                    <div style={{ position: 'absolute', top: '8px', left: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 10 }}>
-                      {candleCount[card.name] > 1 && (
-                        <div style={{ background: 'var(--danger)', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', marginBottom: '-8px' }}>
-                          {candleCount[card.name]}
-                        </div>
-                      )}
-                      <div style={{ fontSize: '20px', filter: 'drop-shadow(0 0 4px rgba(255, 100, 100, 0.6))' }}>🕯️</div>
-                    </div>
-                  )}
-                  <div
-                    className="idea-thumb"
-                    style={{
-                      background:
-                        card.name === 'Loja de Velas Aromáticas'
-                          ? 'linear-gradient(135deg, #2a1a1a, #3d2020)'
-                          : card.name === 'Canal de Produtividade'
-                            ? 'linear-gradient(135deg, #1a2a1a, #203520)'
-                            : card.name === 'Curso de Alemão B1'
-                              ? 'linear-gradient(135deg, #1a1a2a, #202040)'
-                              : card.name === 'Projeto Fitness'
-                                ? 'linear-gradient(135deg, #201a2a, #30203d)'
-                                : card.name === 'Podcast sobre Mindset'
-                                  ? 'linear-gradient(135deg, #1a2028, #20283d)'
-                                  : card.name === 'Aprender Aquarela'
-                                    ? 'linear-gradient(135deg, #28201a, #3d3020)'
-                                    : 'linear-gradient(135deg, #1e1a30, #282048)'
-                    }}
-                  >
-                    <span>{card.icon}</span>
-                    <div className="idea-rip">🪦 RIP</div>
-                  </div>
-                  <div className="idea-body">
-                    <div className="idea-name">{card.name}</div>
-                    <div className="idea-dates">{card.dates}</div>
-                    <div className="idea-cause">
-                      <strong>Causa da morte:</strong> {card.cause}
-                    </div>
-                  </div>
+              {loadingIdeas ? (
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: 'var(--text2)' }}>
+                  ⏳ Carregando ideias do museu...
                 </div>
-              ))}
+              ) : ideas.length === 0 ? (
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: 'var(--text2)' }}>
+                  🏛️ O museu está vazio. Seja o primeiro a eternizar uma ideia!
+                </div>
+              ) : (
+                ideas.map((card) => (
+                  <div className="idea-card" key={card.id} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => { setSelectedCandleIdea(card.nome); memorialSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
+                    {candleCount[card.nome] > 0 && (
+                      <div style={{ position: 'absolute', top: '8px', left: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 10 }}>
+                        {candleCount[card.nome] > 1 && (
+                          <div style={{ background: 'var(--danger)', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', marginBottom: '-8px' }}>
+                            {candleCount[card.nome]}
+                          </div>
+                        )}
+                        <div style={{ fontSize: '20px', filter: 'drop-shadow(0 0 4px rgba(255, 100, 100, 0.6))' }}>🕯️</div>
+                      </div>
+                    )}
+                    <div
+                      className="idea-thumb"
+                      style={{
+                        background: 'linear-gradient(135deg, #1e1a30, #282048)'
+                      }}
+                    >
+                      <span>{card.icon}</span>
+                      <div className="idea-rip">🪦 RIP</div>
+                    </div>
+                    <div className="idea-body">
+                      <div className="idea-name">{card.nome}</div>
+                      <div className="idea-dates">{card.dates}</div>
+                      <div className="idea-cause">
+                        <strong>Causa da morte:</strong> {card.cause}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
 
             </div>
           </div>
@@ -274,7 +317,7 @@ export default function App() {
           <div className="sec-header" ref={memorialSectionRef}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div className="sec-title">Memorial de uma ideia</div>
-              {candleCount[selectedCandleIdea] > 0 && (
+              {selectedCandleIdea && candleCount[selectedCandleIdea] > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(224, 96, 96, 0.2)', padding: '6px 12px', borderRadius: '20px' }}>
                   <div style={{ fontSize: '16px' }}>🕯️</div>
                   {candleCount[selectedCandleIdea] > 1 && (
@@ -290,62 +333,73 @@ export default function App() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '14px', marginBottom: '16px', position: 'relative' }}>
-              <div
-                style={{
-                  width: '80px',
-                  height: '80px',
-                  borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #2a1a1a, #4a2828)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '36px',
-                  flexShrink: 0
-                }}
-              >
-                {selectedIdea.icon}
-              </div>
-              <div>
-                <div className="memorial-name">{selectedIdea.name}</div>
-                <div className="memorial-dates">{selectedIdea.dates}</div>
-                <div className="memorial-cause-label">Causa da morte</div>
-                <div className="memorial-cause-val">{selectedIdea.cause}</div>
-                <div className="memorial-quote">"Só mais uma ideia que poderia ter mudado tudo."</div>
-              </div>
-            </div>
+          {selectedCandleIdea && ideas.length > 0 ? (
+            <>
+              {(() => {
+                const selectedIdea = ideas.find(idea => idea.nome === selectedCandleIdea);
+                return selectedIdea ? (
+                  <>
+                    <div style={{ display: 'flex', gap: '14px', marginBottom: '16px', position: 'relative' }}>
+                      <div
+                        style={{
+                          width: '80px',
+                          height: '80px',
+                          borderRadius: '10px',
+                          background: 'linear-gradient(135deg, #2a1a1a, #4a2828)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '36px',
+                          flexShrink: 0
+                        }}
+                      >
+                        {selectedIdea.icon}
+                      </div>
+                      <div>
+                        <div className="memorial-name">{selectedIdea.nome}</div>
+                        <div className="memorial-dates">{selectedIdea.dates}</div>
+                        <div className="memorial-cause-label">Causa da morte</div>
+                        <div className="memorial-cause-val">{selectedIdea.cause}</div>
+                        <div className="memorial-quote">"Só mais uma ideia que poderia ter mudado tudo."</div>
+                      </div>
+                    </div>
 
-            <div className="memorial-tabs">
-              {['Sobre', 'Linha do Tempo', 'Relíquias', 'Estatísticas', 'Conquistas'].map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  className={`mem-tab ${activeMemTab === tab ? 'active' : ''}`}
-                  onClick={() => setActiveMemTab(tab)}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
+                    <div className="memorial-tabs">
+                      {['Sobre', 'Linha do Tempo', 'Relíquias', 'Estatísticas', 'Conquistas'].map((tab) => (
+                        <button
+                          key={tab}
+                          type="button"
+                          className={`mem-tab ${activeMemTab === tab ? 'active' : ''}`}
+                          onClick={() => setActiveMemTab(tab)}
+                        >
+                          {tab}
+                        </button>
+                      ))}
+                    </div>
 
-            <div className="memorial-cols" style={{ background: activeMemTab === 'Sobre' ? 'var(--bg3)' : 'transparent', padding: activeMemTab === 'Sobre' ? '12px' : '0', margin: activeMemTab === 'Sobre' ? '8px' : '0', borderRadius: activeMemTab === 'Sobre' ? 'var(--radius-sm)' : '0', boxShadow: activeMemTab === 'Sobre' ? '0 0 20px rgba(155, 127, 244, 0.6), 0 0 40px rgba(155, 127, 244, 0.3)' : 'none', transition: 'all 0.2s' }}>
-              <div>
-                <div className="mem-col-title">Biografia</div>
-                <div className="mem-item">Nasceu de um surto de criatividade numa madrugada de domingo. Teve um início promissor, nome, logo, moodboard e até público-alvo imaginário.</div>
-              </div>
-              <div>
-                <div className="mem-col-title">Expectativa</div>
-                <div className="mem-item">💸 Independência financeira</div>
-                <div className="mem-item" style={{ marginTop: '4px' }}>🏷️ Marca autoral</div>
-                <div className="mem-item" style={{ marginTop: '4px' }}>🌿 Vida tranquila no campo</div>
-              </div>
-              <div>
-                <div className="mem-col-title">Realidade</div>
-                <div className="mem-item bad">✘ 0 vendas</div>
-                <div className="mem-item bad" style={{ marginTop: '4px' }}>✘ 14 abas abertas</div>
-                <div className="mem-item bad" style={{ marginTop: '4px' }}>✘ 3 carrinhos abandonados</div>
-              </div>
+                    <div className="memorial-cols" style={{ background: activeMemTab === 'Sobre' ? 'var(--bg3)' : 'transparent', padding: activeMemTab === 'Sobre' ? '12px' : '0', margin: activeMemTab === 'Sobre' ? '8px' : '0', borderRadius: activeMemTab === 'Sobre' ? 'var(--radius-sm)' : '0', boxShadow: activeMemTab === 'Sobre' ? '0 0 20px rgba(155, 127, 244, 0.6), 0 0 40px rgba(155, 127, 244, 0.3)' : 'none', transition: 'all 0.2s' }}>
+                      <div>
+                        <div className="mem-col-title">Análise da IA</div>
+                        <div className="mem-item">{selectedIdea.ai_verdict}</div>
+                      </div>
+                      <div>
+                        <div className="mem-col-title">Sobrevivência</div>
+                        <div className="mem-item">{selectedIdea.survival_percentage}% de chance</div>
+                      </div>
+                      <div>
+                        <div className="mem-col-title">Homenagens</div>
+                        <div className="mem-item">{selectedIdea.honor_count} velas acesas</div>
+                      </div>
+                    </div>
+                  </>
+                ) : null;
+              })()}
+            </>
+          ) : (
+            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text2)' }}>
+              Selecione uma ideia para ver seu memorial
             </div>
+          )}
         </div>
 
         <div className="bottom-grid">
@@ -419,18 +473,19 @@ export default function App() {
             <div className="footer-sub">Preste sua homenagem a este projeto que partiu cedo demais.</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <select
-                value={selectedCandleIdea}
+                value={selectedCandleIdea || ''}
                 onChange={(e) => setSelectedCandleIdea(e.target.value)}
                 className="form-select"
                 style={{ marginBottom: '0' }}
               >
-                {museumCards.map((card) => (
-                  <option key={card.name} value={card.name}>
-                    {card.icon} {card.name}
+                <option value="">Selecione uma ideia...</option>
+                {ideas.map((card) => (
+                  <option key={card.id} value={card.nome}>
+                    {card.icon} {card.nome}
                   </option>
                 ))}
               </select>
-              <button className="btn-primary" type="button" style={{ width: '100%', fontSize: '12px', padding: '8px 14px' }} onClick={handleLightCandle}>Acender velinha</button>
+              <button className="btn-primary" type="button" style={{ width: '100%', fontSize: '12px', padding: '8px 14px' }} onClick={handleLightCandle} disabled={!selectedCandleIdea}>Acender velinha</button>
             </div>
           </section>
 
@@ -509,7 +564,7 @@ export default function App() {
       )}
 
       <FormModal isOpen={isFormModalOpen} onClose={closeModal}>
-        <IdeaForm />
+        <IdeaForm onIdeaAdded={handleNewIdeaAdded} />
       </FormModal>
 
       {isVideoModalOpen && (

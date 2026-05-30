@@ -19,6 +19,25 @@ const geminiService = getGeminiService();
 const ideaService = getIdeaService();
 
 /**
+ * Formata uma ideia para o formato compatível com o frontend
+ * Adiciona campos necessários para renderização no "Museu"
+ * 
+ * @param {Object} idea - Ideia do banco de dados
+ * @returns {Object} Ideia formatada com campos de UI
+ */
+function formatIdeaForFrontend(idea) {
+  if (!idea) return null;
+  
+  const year = new Date(idea.created_at).getFullYear();
+  return {
+    ...idea,
+    icon: '🕯️', // Emoji padrão para ideias
+    dates: `${year} – ${year}`, // Formato: "YYYY – YYYY"
+    cause: idea.cause_of_death_summary, // Usar resumo da IA como causa
+  };
+}
+
+/**
  * POST /api/ideas/analyze
  * Fluxo completo: Validação → Extração de user → Hash → Deduplicação → IA → Persistência
  * 
@@ -71,19 +90,7 @@ export async function analyzeIdea(req, res, next) {
       console.log(`⚠️  Ideia duplicada para usuário ${userId}`);
       return res.status(200).json({
         success: true,
-        data: {
-          id: existingIdea.id,
-          nome: existingIdea.nome,
-          categoria: existingIdea.categoria,
-          empolgacao: existingIdea.empolgacao,
-          survival_percentage: existingIdea.survival_percentage,
-          cause_of_death_summary: existingIdea.cause_of_death_summary,
-          ai_verdict: existingIdea.ai_verdict,
-          honor_count: existingIdea.honor_count,
-          status: existingIdea.status,
-          isDuplicate: true,
-          created_at: existingIdea.created_at,
-        },
+        data: formatIdeaForFrontend(existingIdea),
         message: '⚠️  Esta ideia já foi analisada antes! Retornando análise anterior.',
       });
     }
@@ -108,22 +115,10 @@ export async function analyzeIdea(req, res, next) {
       userId, // ✅ USER_ID REAL DO REQ.USER
     });
 
-    // 7️⃣ RETORNAR RESPOSTA
+    // 7️⃣ RETORNAR RESPOSTA - Formato compatível com frontend
     res.status(200).json({
       success: true,
-      data: {
-        id: idea.id,
-        nome: idea.nome,
-        categoria: idea.categoria,
-        empolgacao: idea.empolgacao,
-        survival_percentage: idea.survival_percentage,
-        cause_of_death_summary: idea.cause_of_death_summary,
-        ai_verdict: idea.ai_verdict,
-        honor_count: idea.honor_count,
-        status: idea.status,
-        isDuplicate: idea.isDuplicate || false,
-        created_at: idea.created_at,
-      },
+      data: formatIdeaForFrontend(idea),
       message: '✅ Ideia analisada e salva com sucesso!',
     });
   } catch (error) {
@@ -155,9 +150,12 @@ export async function listIdeas(req, res, next) {
       offset: parseInt(offset),
     });
 
+    // Transformar ideias para formato compatível com frontend
+    const formattedIdeas = result.ideas.map(formatIdeaForFrontend);
+
     res.status(200).json({
       success: true,
-      data: result.ideas,
+      data: formattedIdeas,
       pagination: {
         total: result.total,
         limit: result.limit,
@@ -193,7 +191,7 @@ export async function getIdea(req, res, next) {
 
     res.status(200).json({
       success: true,
-      data: idea,
+      data: formatIdeaForFrontend(idea),
     });
   } catch (error) {
     console.error('❌ Erro ao obter ideia:', error.message);
@@ -212,11 +210,14 @@ export async function honorIdea(req, res, next) {
 
     console.log(`🎉 Adicionando homenagem à ideia: ${id} (usuário: ${userId})`);
 
-    const honorData = await ideaService.incrementHonor(id, userId); // ✅ VALIDAR PROPRIEDADE
+    await ideaService.incrementHonor(id, userId); // ✅ VALIDAR PROPRIEDADE
+    
+    // Buscar ideia atualizada para retornar formato completo
+    const updatedIdea = await ideaService.getIdea(id, userId);
 
     res.status(200).json({
       success: true,
-      data: honorData,
+      data: formatIdeaForFrontend(updatedIdea),
       message: 'Homenagem adicionada com sucesso!',
     });
   } catch (error) {
@@ -240,7 +241,7 @@ export async function reviveIdea(req, res, next) {
 
     res.status(200).json({
       success: true,
-      data: archivedIdea,
+      data: formatIdeaForFrontend(archivedIdea),
       message: 'Ideia ressuscitada e arquivada com honra!',
     });
   } catch (error) {
