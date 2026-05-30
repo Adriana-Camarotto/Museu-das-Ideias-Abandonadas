@@ -49,7 +49,7 @@ export default function MuseumModal({ isOpen, onClose, title, children }) {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <div className="text-xs tracking-widest uppercase text-[#e8b86d] mb-2">
-                        ✦ Museu das Ideias Abandonadas ✦
+                        ✦ Museu das Ideias Quase Boas ✦
                       </div>
                       <h2 className="font-['Cinzel'] text-3xl font-bold text-[#c4a8ff]">
                         {title}
@@ -75,7 +75,7 @@ export default function MuseumModal({ isOpen, onClose, title, children }) {
                 {/* Footer decorativo */}
                 <div className="mt-8 pt-6 border-t border-[rgba(180,140,255,0.15)] text-center">
                   <p className="text-xs text-[#6a5c8a] italic">
-                    "Cada ideia abandonada é uma obra de arte em construção"
+                    "Toda startup quase boa merece uma placa no museu"
                   </p>
                 </div>
               </div>

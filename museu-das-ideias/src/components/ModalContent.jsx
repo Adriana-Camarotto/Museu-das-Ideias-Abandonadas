@@ -11,30 +11,29 @@ export const MODAL_CONTENTS = {
     content: (
       <>
         <p>
-          O <strong>Museu das Ideias Abandonadas</strong> é um espaço digital dedicado a preservar, 
-          celebrar e analisar projetos que nunca saíram do papel.
+          O <strong>Museu das Ideias Quase Boas</strong> e um espaco digital para registrar startups
+          que pareciam geniais no pitch e duvidosas na vida real.
         </p>
         
         <p>
-          Aqui, cada ideia abandonada é tratada com a dignidade que merece. Não importa se foi 
-          um app revolucionário, uma startup mirabolante ou um projeto pessoal ambicioso — 
-          todos os fracassos são bem-vindos.
+          Aqui, cada projeto recebe o destaque que merece: da ideia brilhante de 3h da manha
+          ao plano de negocio que assustou ate o Canva.
         </p>
 
         <Panel className="p-4 my-4">
           <p className="text-sm">
-            <strong>Nossa Missão:</strong> Transformar o fracasso em arte, o abandono em sabedoria 
-            e a procrastinação em uma experiência memorável.
+            <strong>Nossa Missao:</strong> Transformar pitches exagerados em aprendizado real, com humor
+            e sem passar pano para as planilhas otimistas.
           </p>
         </Panel>
 
         <p>
-          Usando inteligência artificial e um toque de sarcasmo existencial, a <strong>Curadora do Caos</strong> 
-          analisa cada ideia com profundidade, poesia e humor — porque nem tudo na vida precisa ser levado a sério.
+          Com IA e ironia, a <strong>Curadoria do Caos</strong> avalia cada startup quase boa
+          para separar visao de ilusao com carinho critico.
         </p>
 
         <p className="text-xs text-[#6a5c8a] italic">
-          Fundado em 2019 · Preservando sonhos desde então
+          Fundado para proteger investidores de planilhas criativas desde sempre
         </p>
       </>
     )
@@ -45,37 +44,37 @@ export const MODAL_CONTENTS = {
     content: (
       <>
         <p>
-          Este é o memorial sagrado onde cada ideia abandonada encontra seu lugar na história.
+          Este e o hall da fama indevida, onde toda startup quase boa encontra seu lugar na historia.
         </p>
 
         <div className="space-y-4">
           <Panel className="p-4">
-            <h3 className="text-[#c4a8ff] font-semibold mb-2">💀 Ideias Catalogadas</h3>
+            <h3 className="text-[#c4a8ff] font-semibold mb-2">💀 Startups Catalogadas</h3>
             <p className="text-sm">
-              Mais de 1.247 ideias já passaram pela análise da Curadora do Caos, cada uma com sua 
-              própria história de fracasso e aprendizado.
+              Mais de 4.200 projetos ja passaram pela curadoria, cada um com sua
+              historia unica de hype, pivot e queda livre.
             </p>
           </Panel>
 
           <Panel className="p-4">
             <h3 className="text-[#c4a8ff] font-semibold mb-2">🎭 Categorias</h3>
             <p className="text-sm">
-              Apps, Startups, Projetos Pessoais, SaaS, E-commerce, Jogos, Blogs e muito mais. 
-              Cada categoria tem seu próprio espaço no museu.
+              Animais, Comida, Transporte, Tecnologia, Relacionamentos e outras categorias
+              que jamais deveriam ter recebido investimento-anjo.
             </p>
           </Panel>
 
           <Panel className="p-4">
             <h3 className="text-[#c4a8ff] font-semibold mb-2">🔮 Análise por IA</h3>
             <p className="text-sm">
-              Cada ideia recebe uma análise profunda: porcentagem de sobrevivência, causa da morte 
-              e um veredito sarcástico mas reconfortante.
+              Cada startup recebe uma analise completa: chance de vingar,
+              causa da falencia e veredito da curadoria.
             </p>
           </Panel>
         </div>
 
         <p className="text-xs text-[#6a5c8a] italic mt-4">
-          "Todo fracasso é um passo em direção ao sucesso" — Curadora do Caos
+          "Nao e loucura. E visao. O problema e que o futuro discordou." - Curadoria
         </p>
       </>
     )

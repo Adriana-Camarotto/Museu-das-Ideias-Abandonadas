@@ -32,7 +32,7 @@ export default function AnalysisResult({ data, ideaName }) {
           {ideaName}
         </h3>
         <p className="text-xs text-[#6a5c8a]">
-          Avaliado pela Curadora do Caos
+          Avaliado pela Curadoria das Ideias Quase Boas
         </p>
       </div>
 
@@ -44,7 +44,7 @@ export default function AnalysisResult({ data, ideaName }) {
               {survival_percentage}%
             </div>
             <div className="text-xs text-[#6a5c8a] mt-1">
-              Sobrevivência
+              Chance de Vingar
             </div>
           </div>
         </div>
@@ -59,7 +59,7 @@ export default function AnalysisResult({ data, ideaName }) {
           <span className="text-2xl">💀</span>
           <div className="flex-1">
             <h4 className="text-sm font-semibold text-[#c4a8ff] mb-2 uppercase tracking-wide">
-              Causa da Morte
+              Causa da Falencia
             </h4>
             <p className="text-[#e8e0f5] italic leading-relaxed">
               "{cause_of_death_summary}"
@@ -74,7 +74,7 @@ export default function AnalysisResult({ data, ideaName }) {
           <span className="text-2xl">🎭</span>
           <div className="flex-1">
             <h4 className="text-sm font-semibold text-[#c4a8ff] mb-2 uppercase tracking-wide">
-              Veredito da Curadora do Caos
+              Veredito da Curadoria
             </h4>
             <p className="text-[#a898c8] leading-relaxed">
               {ai_verdict}
@@ -86,7 +86,7 @@ export default function AnalysisResult({ data, ideaName }) {
       {/* Footer */}
       <div className="mt-6 pt-6 border-t border-[rgba(180,140,255,0.15)] text-center">
         <p className="text-xs text-[#6a5c8a] italic">
-          "Todo fracasso é uma obra de arte em construção" - Curadora do Caos
+          "Nao era uma ma ideia, era so uma ideia sem mercado." - Curadoria
         </p>
       </div>
     </div>

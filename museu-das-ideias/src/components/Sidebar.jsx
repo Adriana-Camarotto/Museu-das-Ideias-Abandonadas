@@ -10,8 +10,8 @@ export default function Sidebar({ onNavigate }) {
   const menuItems = [
     {
       id: 'analyze',
-      icon: '🔮',
-      label: 'Analisar Ideia',
+      icon: '🤔',
+      label: 'Analisar Startup',
       active: true
     },
     {
@@ -21,8 +21,8 @@ export default function Sidebar({ onNavigate }) {
     },
     {
       id: 'memorial',
-      icon: '📜',
-      label: 'Memorial'
+      icon: '📉',
+      label: 'Hall da Fama Indevida'
     }
   ];
 
@@ -31,14 +31,14 @@ export default function Sidebar({ onNavigate }) {
       {/* Logo/Branding */}
       <div className="p-5 border-b border-[rgba(180,140,255,0.15)] flex items-center gap-3">
         <div className="w-10 h-10 bg-gradient-to-br from-[#7c5ce8] to-[#c4a8ff] rounded-xl flex items-center justify-center text-xl">
-          🏛️
+          🤔
         </div>
         <div className="leading-tight">
           <strong className="block font-['Cinzel'] text-[11px] font-bold text-[#c4a8ff] tracking-widest">
             MUSEU
           </strong>
           <span className="text-[9px] text-[#6a5c8a] tracking-widest uppercase">
-            DAS IDEIAS ABANDONADAS
+            DAS IDEIAS QUASE BOAS
           </span>
         </div>
       </div>

@@ -3,7 +3,6 @@ import Sidebar from './components/Sidebar';
 import IdeaForm from './components/IdeaForm';
 import MuseumModal from './components/MuseumModal';
 import { MODAL_CONTENTS } from './components/ModalContent';
-import ApiStatus from './components/ApiStatus';
 
 export default function App() {
   const [activeModal, setActiveModal] = useState(null);
@@ -32,7 +31,7 @@ export default function App() {
         {/* TOPBAR */}
         <header className="flex items-center justify-between p-3 px-6 border-b border-[rgba(180,140,255,0.15)] bg-[#161020] sticky top-0 z-40">
           <div className="text-xs text-[#6a5c8a]">
-            Museu das Ideias Abandonadas · Acervo vivo desde 2019
+            Museu das Ideias Quase Boas · Startups que nunca deveriam ter existido · Desde sempre
           </div>
         </header>
 
@@ -43,25 +42,25 @@ export default function App() {
               <span className="w-5 h-[1px] bg-[#e8b86d]"></span> Bem-vindo ao
             </div>
             <h1 className="font-['Cinzel'] text-4xl font-bold text-white mb-4 leading-tight">
-              Museu das Ideias Abandonadas
+              Museu das Ideias Quase Boas
             </h1>
             <p className="text-[#a898c8] text-sm mb-6">
-              Preservamos sonhos interrompidos, planos mirabolantes e projetos que não viraram realidade.
+              Startups que nunca deveriam ter existido. Preservamos os pitches mais corajosos, e questionaveis, da historia do empreendedorismo.
             </p>
             <div className="flex items-center gap-4 text-xs text-[#6a5c8a]">
               <div className="flex items-center gap-2">
-                <span>💀</span>
-                <span>+1.247 ideias catalogadas</span>
+                <span>🤔</span>
+                <span>+4.200 startups exibidas</span>
               </div>
               <div className="flex items-center gap-2">
-                <span>🎭</span>
-                <span>Análise por IA</span>
+                <span>💸</span>
+                <span>831 investidores enganados</span>
               </div>
             </div>
           </div>
           {/* Estátua de fundo */}
           <div className="absolute right-10 top-0 bottom-0 flex items-center opacity-20 text-[160px] pointer-events-none sepia hue-rotate-180">
-            🗿
+            🤔
           </div>
         </section>
 
@@ -72,7 +71,7 @@ export default function App() {
 
         {/* FOOTER */}
         <footer className="border-t border-[rgba(180,140,255,0.15)] p-4 text-center text-xs text-[#6a5c8a]">
-          <p>Desenvolvido com 💜 e um toque de sarcasmo existencial</p>
+          <p>Desenvolvido com humor, risco desnecessario e validacao de mercado tardia</p>
         </footer>
 
       </main>

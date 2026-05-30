@@ -1,6 +1,6 @@
 /**
- * Formulário para submissão de ideias abandonadas
- * Coleta dados do usuário e envia para análise da IA
+ * Formulario para submissao de startups quase boas.
+ * Coleta dados e envia para analise da IA.
  */
 
 import { useState } from 'react';
@@ -62,18 +62,18 @@ export default function IdeaForm() {
       <div className="bg-[#161020] border border-[rgba(180,140,255,0.15)] rounded-xl p-8 mb-6">
         <div className="mb-6">
           <h2 className="font-['Cinzel'] text-2xl text-[#c4a8ff] mb-2">
-            Confesse sua Ideia Abandonada
+            Confesse sua Startup Quase Boa
           </h2>
           <p className="text-sm text-[#a898c8]">
-            Compartilhe conosco o projeto que nunca saiu do papel. A Curadora do Caos está pronta para julgar.
+            Compartilhe conosco a startup que parecia brilhante no pitch e duvidosa na execucao.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Nome da Ideia */}
+          {/* Nome da Startup */}
           <div>
             <label className="block text-sm font-medium text-[#c4a8ff] mb-2">
-              Nome da Ideia *
+              Nome da Startup *
             </label>
             <input
               type="text"
@@ -83,7 +83,7 @@ export default function IdeaForm() {
               required
               disabled={loading}
               className="w-full px-4 py-3 bg-[#0f0b18] border border-[rgba(180,140,255,0.2)] rounded-lg text-[#e8e0f5] placeholder-[#6a5c8a] focus:outline-none focus:border-[#7c5ce8] transition-colors disabled:opacity-50"
-              placeholder="Ex: App de delivery de sonhos"
+              placeholder="Ex: Uber para Pombos"
             />
           </div>
 
@@ -101,13 +101,11 @@ export default function IdeaForm() {
               className="w-full px-4 py-3 bg-[#0f0b18] border border-[rgba(180,140,255,0.2)] rounded-lg text-[#e8e0f5] focus:outline-none focus:border-[#7c5ce8] transition-colors disabled:opacity-50"
             >
               <option value="">Selecione uma categoria...</option>
-              <option value="App">📱 App</option>
-              <option value="Startup">🚀 Startup</option>
-              <option value="Projeto Pessoal">💡 Projeto Pessoal</option>
-              <option value="SaaS">☁️ SaaS</option>
-              <option value="E-commerce">🛒 E-commerce</option>
-              <option value="Jogo">🎮 Jogo</option>
-              <option value="Blog/Conteúdo">✍️ Blog/Conteúdo</option>
+              <option value="Animais">🐦 Animais</option>
+              <option value="Comida">🍔 Comida</option>
+              <option value="Transporte">🚕 Transporte</option>
+              <option value="Tecnologia">💻 Tecnologia</option>
+              <option value="Relacionamentos">💘 Relacionamentos</option>
               <option value="Outro">🎯 Outro</option>
             </select>
           </div>
@@ -115,10 +113,10 @@ export default function IdeaForm() {
           {/* Empolgação */}
           <div>
             <label className="block text-sm font-medium text-[#c4a8ff] mb-2">
-              Empolgação Inicial: <span className="text-[#e8b86d] font-bold">{formData.empolgacao}/5</span>
+              Nivel de Viabilidade: <span className="text-[#e8b86d] font-bold">{formData.empolgacao}/5</span>
             </label>
             <div className="flex items-center gap-4">
-              <span className="text-xs text-[#6a5c8a]">😐 Meh</span>
+              <span className="text-xs text-[#6a5c8a]">💀 Inviavel</span>
               <input
                 type="range"
                 name="empolgacao"
@@ -129,14 +127,14 @@ export default function IdeaForm() {
                 disabled={loading}
                 className="flex-1 h-2 bg-[#0f0b18] rounded-lg appearance-none cursor-pointer accent-[#7c5ce8] disabled:opacity-50"
               />
-              <span className="text-xs text-[#6a5c8a]">🔥 Hype</span>
+              <span className="text-xs text-[#6a5c8a]">🤡 Quase Genial</span>
             </div>
           </div>
 
-          {/* Motivo do Abandono */}
+          {/* Causa da Falencia */}
           <div>
             <label className="block text-sm font-medium text-[#c4a8ff] mb-2">
-              Por que foi abandonada? *
+              Por que nunca deu certo? *
             </label>
             <textarea
               name="motivo"
@@ -146,7 +144,7 @@ export default function IdeaForm() {
               disabled={loading}
               rows="4"
               className="w-full px-4 py-3 bg-[#0f0b18] border border-[rgba(180,140,255,0.2)] rounded-lg text-[#e8e0f5] placeholder-[#6a5c8a] focus:outline-none focus:border-[#7c5ce8] transition-colors resize-none disabled:opacity-50"
-              placeholder="Conte-nos a triste (ou hilária) história do abandono..."
+              placeholder="Conte sem filtro o motivo da falencia..."
             />
           </div>
 
@@ -164,7 +162,7 @@ export default function IdeaForm() {
                   Analisando...
                 </span>
               ) : (
-                '🔮 Analisar Ideia'
+                '🤔 Analisar Startup'
               )}
             </Button>
             
@@ -175,7 +173,7 @@ export default function IdeaForm() {
                 disabled={loading}
                 variant="secondary"
               >
-                Nova Análise
+                Nova Analise
               </Button>
             )}
           </div>
