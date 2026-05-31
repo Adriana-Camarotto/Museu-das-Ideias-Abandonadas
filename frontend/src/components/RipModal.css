@@ -13,14 +13,24 @@
 
 /* RIP Modal Content */
 .rip-modal-content {
+<<<<<<< Updated upstream
   background: linear-gradient(135deg, #0a0608 0%, #161020 50%, #1a1328 100%);
+=======
+  background: linear-gradient(135deg, #1a1228 0%, #2d1b3d 100%);
+>>>>>>> Stashed changes
   border: 2px solid rgba(180, 140, 255, 0.3);
   border-radius: 16px;
   max-width: 500px;
   width: 100%;
+<<<<<<< Updated upstream
   box-shadow: 0 0 40px rgba(180, 140, 255, 0.2), 0 0 80px rgba(224, 96, 96, 0.15), inset 0 0 20px rgba(155, 127, 244, 0.05);
   overflow: hidden;
   animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+=======
+  box-shadow: 0 0 40px rgba(180, 140, 255, 0.2), 0 0 80px rgba(224, 96, 96, 0.15);
+  overflow: hidden;
+  animation: slideUp 0.4s ease-out;
+>>>>>>> Stashed changes
 }
 
 @keyframes slideUp {
@@ -35,6 +45,7 @@
 }
 
 .rip-modal-header {
+<<<<<<< Updated upstream
   padding: 28px 24px;
   background: linear-gradient(90deg, rgba(155, 127, 244, 0.15), rgba(224, 96, 96, 0.15));
   border-bottom: 1px solid rgba(180, 140, 255, 0.3);
@@ -42,6 +53,14 @@
   align-items: center;
   gap: 16px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+=======
+  padding: 24px;
+  background: linear-gradient(90deg, rgba(180, 140, 255, 0.1), rgba(224, 96, 96, 0.1));
+  border-bottom: 1px solid rgba(180, 140, 255, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+>>>>>>> Stashed changes
 }
 
 .rip-icon {
@@ -69,6 +88,7 @@
 
 .rip-idea-name {
   font-size: 18px;
+<<<<<<< Updated upstream
   font-weight: 700;
   color: #e8e0f5;
   margin-bottom: 16px;
@@ -77,6 +97,15 @@
   border-left: 4px solid rgba(180, 140, 255, 0.6);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(155, 127, 244, 0.1);
+=======
+  font-weight: 600;
+  color: #e8e0f5;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(180, 140, 255, 0.1);
+  border-left: 3px solid rgba(180, 140, 255, 0.5);
+  border-radius: 6px;
+>>>>>>> Stashed changes
 }
 
 .rip-warning-box {
@@ -84,11 +113,18 @@
   align-items: flex-start;
   gap: 12px;
   margin: 16px 0;
+<<<<<<< Updated upstream
   padding: 16px;
   background: linear-gradient(135deg, rgba(224, 96, 96, 0.12), rgba(224, 96, 96, 0.08));
   border: 1.5px solid rgba(224, 96, 96, 0.4);
   border-radius: 10px;
   box-shadow: 0 4px 12px rgba(224, 96, 96, 0.1);
+=======
+  padding: 12px;
+  background: rgba(224, 96, 96, 0.15);
+  border: 1px solid rgba(224, 96, 96, 0.3);
+  border-radius: 8px;
+>>>>>>> Stashed changes
 }
 
 .rip-warning-icon {
@@ -119,6 +155,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+<<<<<<< Updated upstream
   padding: 12px;
   background: linear-gradient(135deg, rgba(30, 22, 48, 0.5), rgba(22, 16, 32, 0.5));
   border-left: 3px solid rgba(224, 96, 96, 0.3);
@@ -133,6 +170,19 @@
   border-left-color: rgba(224, 96, 96, 0.7);
   transform: translateX(6px);
   box-shadow: 0 4px 12px rgba(224, 96, 96, 0.15);
+=======
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #d0c8e0;
+  transition: all 0.2s ease;
+}
+
+.consequence-item:hover {
+  background: rgba(180, 140, 255, 0.1);
+  transform: translateX(4px);
+>>>>>>> Stashed changes
 }
 
 .consequence-emoji {
@@ -147,6 +197,7 @@
 
 .rip-moral-text {
   margin-top: 16px;
+<<<<<<< Updated upstream
   padding: 16px;
   background: linear-gradient(135deg, rgba(180, 140, 255, 0.1), rgba(155, 127, 244, 0.05));
   border-radius: 10px;
@@ -161,6 +212,21 @@
 .rip-modal-footer {
   padding: 20px 24px;
   background: linear-gradient(90deg, rgba(155, 127, 244, 0.08), rgba(22, 16, 32, 0.5));
+=======
+  padding: 12px;
+  background: rgba(180, 140, 255, 0.08);
+  border-radius: 6px;
+  font-style: italic;
+  font-size: 12px;
+  color: #b5a0cc;
+  text-align: center;
+  border-left: 3px solid rgba(180, 140, 255, 0.4);
+}
+
+.rip-modal-footer {
+  padding: 16px 24px;
+  background: rgba(0, 0, 0, 0.3);
+>>>>>>> Stashed changes
   border-top: 1px solid rgba(180, 140, 255, 0.2);
   display: flex;
   gap: 12px;
@@ -181,6 +247,7 @@
 }
 
 .rip-btn-cancel {
+<<<<<<< Updated upstream
   background: rgba(180, 140, 255, 0.12);
   color: #b5a0cc;
   border: 2px solid rgba(180, 140, 255, 0.3);
@@ -195,12 +262,23 @@
 
 .rip-btn-cancel:active {
   transform: translateY(0);
+=======
+  background: rgba(180, 140, 255, 0.15);
+  color: #b5a0cc;
+  border: 1px solid rgba(180, 140, 255, 0.3);
+}
+
+.rip-btn-cancel:hover {
+  background: rgba(180, 140, 255, 0.25);
+  border-color: rgba(180, 140, 255, 0.5);
+>>>>>>> Stashed changes
 }
 
 .rip-btn-confirm {
   background: linear-gradient(135deg, #ff6060, #ff4444);
   color: white;
   box-shadow: 0 4px 15px rgba(255, 96, 96, 0.3);
+<<<<<<< Updated upstream
   border: none;
 }
 
@@ -211,6 +289,17 @@
 
 .rip-btn-confirm:active {
   transform: translateY(-1px);
+=======
+}
+
+.rip-btn-confirm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 96, 96, 0.4);
+}
+
+.rip-btn-confirm:active {
+  transform: translateY(0);
+>>>>>>> Stashed changes
 }
 
 /* Sparkles Effect */

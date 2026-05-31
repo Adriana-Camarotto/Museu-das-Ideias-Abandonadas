@@ -5,11 +5,64 @@ import { MODAL_CONTENTS } from './components/ModalContent';
 import IdeaForm from './components/IdeaForm';
 import FormModal from './components/FormModal';
 import RipModal from './components/RipModal';
+<<<<<<< Updated upstream
 import { subscribeToAlerts } from './services/ideaService';
 import { playRandomAudio } from './services/audioRandomizer';
 import heroImage from './images/FA98EE2C-9D78-439E-BEC5-8D21ABE448C7.webp';
+=======
+import AuthScreen from './components/AuthScreen';
+import { lightCandle, listIdeas, reviveIdea, subscribeToAlerts } from './services/ideaService';
+import { authService } from './services/authService';
+
+const LOCAL_CANDLE_COUNTS_KEY = 'museum_candle_counts';
+const LOCAL_REVIVED_STATUS_KEY = 'museum_revived_status';
+
+function readLocalJson(key, fallback) {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch {
+    localStorage.removeItem(key);
+    return fallback;
+  }
+}
+
+function writeLocalJson(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function getIdeaKey(idea) {
+  return idea?.id || idea?.name || idea?.nome || '';
+}
+
+function normalizeIdeaCard(idea) {
+  if (!idea) return null;
+  const year = idea.created_at ? new Date(idea.created_at).getFullYear() : new Date().getFullYear();
+
+  return {
+    ...idea,
+    id: idea.id,
+    icon: idea.icon || '🕯️',
+    name: idea.name || idea.nome,
+    dates: idea.dates || `${year} - ${year}`,
+    cause: idea.cause || idea.cause_of_death_summary || idea.motivo || '',
+    category: idea.category || idea.categoria || 'Outros',
+    status: idea.status || 'abandoned',
+    honor_count: Number(idea.honor_count || 0),
+  };
+}
+>>>>>>> Stashed changes
 
 export default function App() {
+  const [authUser, setAuthUser] = useState(() => authService.getStoredUser());
+  const [, setAuthSession] = useState(null);
+  const [authMode, setAuthMode] = useState('login');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authName, setAuthName] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState(null);
+
   const [activeModal, setActiveModal] = useState(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -41,13 +94,23 @@ export default function App() {
       { pos: 5, avatar: '🤷', name: 'Simplesmente desistiu', count: 1560 },
     ],
   };
+<<<<<<< Updated upstream
   const [selectedMood, setSelectedMood] = useState(4);
   const [abandonReason, setAbandonReason] = useState('');
+=======
+  const [selectedMood] = useState(4);
+>>>>>>> Stashed changes
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterFeedback, setNewsletterFeedback] = useState(null);
   const [newsletterLoading, setNewsletterLoading] = useState(false);
   const [selectedCandleIdea, setSelectedCandleIdea] = useState('Loja de Velas Aromáticas');
+<<<<<<< Updated upstream
   const [candleCount, setCandleCount] = useState({});
+=======
+  const [candleCount, setCandleCount] = useState(() => readLocalJson(LOCAL_CANDLE_COUNTS_KEY, {}));
+  const [candleLoading, setCandleLoading] = useState(false);
+  const [reviveLoading, setReviveLoading] = useState(false);
+>>>>>>> Stashed changes
   const [isRipModalOpen, setIsRipModalOpen] = useState(false);
   const [ripTargetIdea, setRipTargetIdea] = useState(null);
   const [museumCards, setMuseumCards] = useState([
@@ -85,6 +148,10 @@ export default function App() {
   const rankingCardRef = useRef(null);
   const achievementSectionRef = useRef(null);
   const timelineSectionRef = useRef(null);
+<<<<<<< Updated upstream
+=======
+  const footerRef = useRef(null);
+>>>>>>> Stashed changes
   const isAutoScrollingRef = useRef(false);
 
   const filters = ['Todas', 'Empreendedorismo', 'Estudos', 'Fitness', 'Hobbies', 'Criativas', 'Organização', 'Outros'];
@@ -92,6 +159,104 @@ export default function App() {
   const survivalPct = survivalPcts[selectedMood] ?? 13;
 
   useEffect(() => {
+<<<<<<< Updated upstream
+=======
+    let mounted = true;
+
+    function getStoredUserWithoutSupabaseSession() {
+      const storedUser = authService.getStoredUser();
+
+      if (storedUser?.provider === 'google') {
+        authService.clearLocalSession();
+        return null;
+      }
+
+      return storedUser;
+    }
+
+    function applySession(session) {
+      const syncedUser = authService.persistSupabaseSession(session);
+      if (!mounted) return;
+
+      setAuthSession(session);
+      setAuthUser(syncedUser || getStoredUserWithoutSupabaseSession());
+      setAuthLoading(false);
+    }
+
+    async function syncAuth() {
+      const { session, user, error } = await authService.syncSupabaseSession();
+      if (!mounted) return;
+
+      if (error) {
+        setAuthSession(null);
+        setAuthUser(null);
+        setAuthLoading(false);
+        return;
+      }
+
+      setAuthSession(session);
+      setAuthUser(user || getStoredUserWithoutSupabaseSession());
+      setAuthLoading(false);
+    }
+
+    syncAuth();
+
+    const subscription = authService.onSupabaseAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' && authService.getStoredUser()?.provider === 'google') {
+        authService.clearLocalSession();
+      }
+
+      applySession(session);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!authUser) return;
+
+    let active = true;
+
+    async function loadPersistedIdeas() {
+      const response = await listIdeas({ status: 'all', limit: 100, offset: 0 });
+      if (!active || !response?.data) return;
+
+      const persistedCards = response.data.map(normalizeIdeaCard).filter(Boolean);
+      const localStatuses = readLocalJson(LOCAL_REVIVED_STATUS_KEY, {});
+
+      setMuseumCards((currentCards) => {
+        const persistedKeys = new Set(persistedCards.map(getIdeaKey));
+        const localCards = currentCards
+          .filter((card) => !persistedKeys.has(getIdeaKey(card)))
+          .map((card) => ({ ...card, status: localStatuses[getIdeaKey(card)] || card.status }));
+
+        return [...persistedCards, ...localCards];
+      });
+
+      setCandleCount((currentCounts) => {
+        const nextCounts = { ...currentCounts };
+
+        persistedCards.forEach((card) => {
+          nextCounts[getIdeaKey(card)] = Number(card.honor_count || 0);
+        });
+
+        writeLocalJson(LOCAL_CANDLE_COUNTS_KEY, nextCounts);
+        return nextCounts;
+      });
+    }
+
+    loadPersistedIdeas();
+
+    return () => {
+      active = false;
+    };
+  }, [authUser]);
+
+  useEffect(() => {
+>>>>>>> Stashed changes
     const handleScroll = () => {
       if (highlightRankingCard && !isAutoScrollingRef.current) {
         setHighlightRankingCard(false);
@@ -143,6 +308,7 @@ export default function App() {
     setIsRipModalOpen(true);
   };
 
+<<<<<<< Updated upstream
   const handleRipConfirm = () => {
     if (ripTargetIdea) {
       setMuseumCards((prev) => prev.filter((card) => card.name !== ripTargetIdea.name));
@@ -165,6 +331,124 @@ export default function App() {
   };
 
   const selectedIdea = museumCards.find(card => card.name === selectedCandleIdea) || museumCards[0];
+=======
+  const handleRipConfirm = async () => {
+    if (!ripTargetIdea || reviveLoading) return;
+
+    const targetKey = getIdeaKey(ripTargetIdea);
+    setReviveLoading(true);
+
+    try {
+      const revivedIdea = ripTargetIdea.id
+        ? normalizeIdeaCard(await reviveIdea(ripTargetIdea.id))
+        : { ...ripTargetIdea, status: 'reviving' };
+
+      if (!ripTargetIdea.id) {
+        const localStatuses = readLocalJson(LOCAL_REVIVED_STATUS_KEY, {});
+        writeLocalJson(LOCAL_REVIVED_STATUS_KEY, {
+          ...localStatuses,
+          [targetKey]: 'reviving',
+        });
+      }
+
+      setMuseumCards((prev) => prev.map((card) => (
+        getIdeaKey(card) === targetKey ? { ...card, ...revivedIdea } : card
+      )));
+    } finally {
+      setReviveLoading(false);
+      setRipTargetIdea(null);
+    }
+  };
+
+  const selectedIdea = museumCards.find(card => (
+    getIdeaKey(card) === selectedCandleIdea || card.name === selectedCandleIdea
+  )) || museumCards[0];
+  const selectedIdeaKey = getIdeaKey(selectedIdea);
+  const selectedCandleCount = Number(candleCount[selectedIdeaKey] || selectedIdea?.honor_count || 0);
+
+  const handleLightCandle = async () => {
+    if (!selectedIdea || candleLoading) return;
+
+    const selectedKey = getIdeaKey(selectedIdea);
+    setCandleLoading(true);
+
+    try {
+      if (selectedIdea.id) {
+        const updatedIdea = normalizeIdeaCard(await lightCandle(selectedIdea.id));
+        const updatedCount = Number(updatedIdea?.honor_count || 0);
+
+        setMuseumCards((prev) => prev.map((card) => (
+          getIdeaKey(card) === selectedKey ? { ...card, ...updatedIdea } : card
+        )));
+
+        setCandleCount((prev) => {
+          const next = { ...prev, [selectedKey]: updatedCount };
+          writeLocalJson(LOCAL_CANDLE_COUNTS_KEY, next);
+          return next;
+        });
+      } else {
+        setCandleCount((prev) => {
+          const next = { ...prev, [selectedKey]: Number(prev[selectedKey] || 0) + 1 };
+          writeLocalJson(LOCAL_CANDLE_COUNTS_KEY, next);
+          return next;
+        });
+      }
+
+      setIsVideoModalOpen(true);
+    } finally {
+      setCandleLoading(false);
+    }
+  };
+
+  const handleNotificationClick = () => {
+    footerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleShareMemorial = async () => {
+    if (!selectedIdea) return;
+
+    const shareData = {
+      title: `Memorial de ${selectedIdea.name}`,
+      text: `${selectedIdea.name} (${selectedIdea.dates}) - Causa da morte: ${selectedIdea.cause}`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
+      }
+    } catch (error) {
+      console.error('Nao foi possivel compartilhar o memorial:', error);
+    }
+  };
+
+  const handleIdeaAdded = (idea) => {
+    const card = normalizeIdeaCard(idea);
+    if (!card) return;
+
+    const cardKey = getIdeaKey(card);
+
+    setMuseumCards((prev) => {
+      const exists = prev.some((item) => getIdeaKey(item) === cardKey);
+      return exists
+        ? prev.map((item) => (getIdeaKey(item) === cardKey ? { ...item, ...card } : item))
+        : [card, ...prev];
+    });
+
+    setCandleCount((prev) => {
+      const next = { ...prev, [cardKey]: Number(card.honor_count || 0) };
+      writeLocalJson(LOCAL_CANDLE_COUNTS_KEY, next);
+      return next;
+    });
+
+    setSelectedCandleIdea(cardKey);
+  };
+>>>>>>> Stashed changes
 
   const handleNewsletterSubscribe = async () => {
     const email = newsletterEmail.trim();
@@ -197,6 +481,115 @@ export default function App() {
     }
   };
 
+<<<<<<< Updated upstream
+=======
+  const validateAuthFields = () => {
+    const email = authEmail.trim();
+
+    if (!email) {
+      return 'Informe seu e-mail para entrar no museu.';
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return 'Informe um e-mail valido.';
+    }
+
+    if (!authPassword) {
+      return 'Informe sua senha.';
+    }
+
+    if (authPassword.length < 6) {
+      return 'A senha precisa ter pelo menos 6 caracteres.';
+    }
+
+    return null;
+  };
+
+  const handleAuthSubmit = async (event) => {
+    event.preventDefault();
+
+    const validationError = validateAuthFields();
+    if (validationError) {
+      setAuthError(validationError);
+      return;
+    }
+
+    setAuthLoading(true);
+    setAuthError(null);
+
+    try {
+      const credentials = {
+        email: authEmail.trim(),
+        password: authPassword,
+        name: authName.trim(),
+      };
+
+      const session = authMode === 'signup'
+        ? await authService.signupWithPassword(credentials)
+        : await authService.loginWithPassword(credentials);
+
+      if (session?.needsEmailConfirmation) {
+        setAuthError('Credencial criada. Verifique seu e-mail para confirmar o acesso antes de entrar.');
+        return;
+      }
+
+      const user = session?.user || authService.getStoredUser();
+      if (user) {
+        setAuthUser(user);
+        return;
+      }
+
+      throw new Error('Nao foi possivel iniciar sua sessao. Tente novamente.');
+    } catch (error) {
+      setAuthError(error.message || 'Nao foi possivel entrar com e-mail e senha.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setAuthLoading(true);
+    setAuthError(null);
+
+    try {
+      await authService.loginWithGoogle();
+    } catch (error) {
+      setAuthError(error.message || 'Nao foi possivel iniciar o login com Google.');
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setAuthUser(null);
+    setAuthEmail('');
+    setAuthPassword('');
+    setAuthName('');
+    setAuthMode('login');
+    setAuthLoading(false);
+    setAuthError(null);
+  };
+
+  if (!authUser) {
+    return (
+      <AuthScreen
+        authMode={authMode}
+        setAuthMode={setAuthMode}
+        authEmail={authEmail}
+        setAuthEmail={setAuthEmail}
+        authPassword={authPassword}
+        setAuthPassword={setAuthPassword}
+        authName={authName}
+        setAuthName={setAuthName}
+        authLoading={authLoading}
+        authError={authError}
+        onSubmit={handleAuthSubmit}
+        onGoogleLogin={handleGoogleLogin}
+      />
+    );
+  }
+
+>>>>>>> Stashed changes
   return (
     <div>
       <Sidebar onNavigate={handleNavigate} />
@@ -207,9 +600,12 @@ export default function App() {
             Museu das Ideias Abandonadas · Acervo vivo desde 2019
           </div>
           <div className="topbar-right">
-            <button className="notif-btn" type="button" aria-label="Notificações">
+            <button className="notif-btn" type="button" aria-label="Notificações" onClick={handleNotificationClick}>
               🔔
               <div className="notif-dot"></div>
+            </button>
+            <button className="btn-outline" type="button" onClick={handleLogout} style={{ padding: '8px 12px' }}>
+              Sair
             </button>
           </div>
         </header>
@@ -223,6 +619,11 @@ export default function App() {
               Preservamos sonhos interrompidos, planos mirabolantes e projetos que não viraram realidade.
             </p>
             <div className="hero-btns">
+<<<<<<< Updated upstream
+=======
+              <button className="btn-primary" type="button" onClick={() => handleNavigate('museu')}>Entrar no Museu ✦</button>
+              <button className="btn-outline" type="button" onClick={() => handleNavigate('sobre')}>🎫 Fazer visita guiada</button>
+>>>>>>> Stashed changes
             </div>
             <div className="hero-stats">
               <div><div className="hero-stat-label">Ideias enterradas</div><div className="hero-stat-val">12.842</div></div>
@@ -272,6 +673,7 @@ export default function App() {
                   const matchesSearch = searchQuery === '' || card.name.toLowerCase().includes(searchQuery.toLowerCase());
                   return matchesCategory && matchesSearch;
                 })
+<<<<<<< Updated upstream
                 .map((card) => (
                 <div className="idea-card" key={card.name} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => { setSelectedCandleIdea(card.name); memorialSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
                   {candleCount[card.name] > 0 && (
@@ -279,6 +681,19 @@ export default function App() {
                       {candleCount[card.name] > 1 && (
                         <div style={{ background: 'var(--danger)', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', marginBottom: '-8px' }}>
                           {candleCount[card.name]}
+=======
+                .map((card) => {
+                  const cardKey = getIdeaKey(card);
+                  const cardCandleCount = Number(candleCount[cardKey] || card.honor_count || 0);
+
+                  return (
+                <div className="idea-card" key={cardKey} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => { setSelectedCandleIdea(cardKey); memorialSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
+                  {cardCandleCount > 0 && (
+                    <div style={{ position: 'absolute', top: '8px', left: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 10 }}>
+                      {cardCandleCount > 1 && (
+                        <div style={{ background: 'var(--danger)', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', marginBottom: '-8px' }}>
+                          {cardCandleCount}
+>>>>>>> Stashed changes
                         </div>
                       )}
                       <div style={{ fontSize: '20px', filter: 'drop-shadow(0 0 4px rgba(255, 100, 100, 0.6))' }}>🕯️</div>
@@ -329,6 +744,10 @@ export default function App() {
                     <button
                       type="button"
                       className="idea-rip"
+<<<<<<< Updated upstream
+=======
+                      disabled={card.status === 'reviving' || reviveLoading}
+>>>>>>> Stashed changes
                       onClick={(e) => {
                         e.stopPropagation();
                         handleRipClick(card);
@@ -345,7 +764,8 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-              ))}
+                  );
+                })}
 
             </div>
           </div>
@@ -450,11 +870,19 @@ export default function App() {
           <div className="sec-header" ref={memorialSectionRef}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div className="sec-title">Memorial de uma ideia</div>
+<<<<<<< Updated upstream
               {candleCount[selectedCandleIdea] > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(224, 96, 96, 0.2)', padding: '6px 12px', borderRadius: '20px' }}>
                   <div style={{ fontSize: '16px' }}>🕯️</div>
                   {candleCount[selectedCandleIdea] > 1 && (
                     <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--danger)' }}>{candleCount[selectedCandleIdea]}</div>
+=======
+              {selectedCandleCount > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(224, 96, 96, 0.2)', padding: '6px 12px', borderRadius: '20px' }}>
+                  <div style={{ fontSize: '16px' }}>🕯️</div>
+                  {selectedCandleCount > 1 && (
+                    <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--danger)' }}>{selectedCandleCount}</div>
+>>>>>>> Stashed changes
                   )}
                 </div>
               )}
@@ -463,6 +891,10 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => handleRipClick(selectedIdea)}
+<<<<<<< Updated upstream
+=======
+                disabled={selectedIdea?.status === 'reviving' || reviveLoading}
+>>>>>>> Stashed changes
                 style={{
                   background: 'linear-gradient(135deg, #ff6060, #ff4444)',
                   border: 'none',
@@ -603,7 +1035,7 @@ export default function App() {
 
         </div>
 
-        <div className="footer-row">
+        <div className="footer-row" ref={footerRef}>
           <section className="footer-widget">
             <div className="footer-title">🕯️ Homenagear uma ideia</div>
             <div className="footer-sub">Preste sua homenagem a este projeto que partiu cedo demais.</div>
@@ -615,19 +1047,31 @@ export default function App() {
                 style={{ marginBottom: '0' }}
               >
                 {museumCards.map((card) => (
+<<<<<<< Updated upstream
                   <option key={card.name} value={card.name}>
+=======
+                  <option key={getIdeaKey(card)} value={getIdeaKey(card)}>
+>>>>>>> Stashed changes
                     {card.icon} {card.name}
                   </option>
                 ))}
               </select>
+<<<<<<< Updated upstream
               <button className="btn-primary" type="button" style={{ width: '100%', fontSize: '12px', padding: '8px 14px' }} onClick={handleLightCandle}>Acender velinha</button>
+=======
+              <button className="btn-primary" type="button" style={{ width: '100%', fontSize: '12px', padding: '8px 14px' }} onClick={handleLightCandle} disabled={candleLoading}>Acender velinha</button>
+>>>>>>> Stashed changes
             </div>
           </section>
 
           <section className="footer-widget">
             <div className="footer-title">📱 Compartilhar memorial</div>
             <div className="footer-sub">Mostre para o mundo o seu potencial desperdiçado.</div>
+<<<<<<< Updated upstream
             <button className="btn-primary" type="button" style={{ fontSize: '12px' }} onClick={() => playRandomAudio('gerar card para compartilhar')}>📩 Gerar card para compartilhar</button>
+=======
+            <button className="btn-primary" type="button" style={{ fontSize: '12px' }} onClick={handleShareMemorial}>📩 Gerar card para compartilhar</button>
+>>>>>>> Stashed changes
           </section>
 
           <section className="footer-widget">
@@ -699,7 +1143,7 @@ export default function App() {
       )}
 
       <FormModal isOpen={isFormModalOpen} onClose={closeModal}>
-        <IdeaForm />
+        <IdeaForm onIdeaAdded={handleIdeaAdded} />
       </FormModal>
 
       {isVideoModalOpen && (

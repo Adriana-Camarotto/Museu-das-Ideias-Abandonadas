@@ -58,20 +58,33 @@ export default function AuthScreen({
           </button>
         </div>
 
+<<<<<<< Updated upstream
         <form className="auth-form" onSubmit={onSubmit}>
           {isSignup && (
+=======
+        <form className="auth-form" onSubmit={onSubmit} noValidate>
+          {isSignup ? (
+>>>>>>> Stashed changes
             <label>
               <span>Nome da credencial</span>
               <input
                 type="text"
                 value={authName}
                 onChange={(event) => setAuthName(event.target.value)}
+<<<<<<< Updated upstream
                 placeholder="Curador anônimo"
+=======
+                placeholder="Curador anonimo"
+>>>>>>> Stashed changes
                 autoComplete="name"
                 disabled={authLoading}
               />
             </label>
+<<<<<<< Updated upstream
           )}
+=======
+          ) : null}
+>>>>>>> Stashed changes
 
           <label>
             <span>E-mail da credencial</span>
@@ -100,23 +113,40 @@ export default function AuthScreen({
             />
           </label>
 
+<<<<<<< Updated upstream
           {authError && (
             <div className="auth-error" role="alert">
               {authError}
             </div>
           )}
+=======
+          {authError ? (
+            <div className="auth-error" role="alert">
+              {authError}
+            </div>
+          ) : null}
+>>>>>>> Stashed changes
 
           <button className="auth-submit" type="submit" disabled={authLoading}>
             {authLoading
               ? 'Consultando os arquivos esquecidos...'
               : isSignup
+<<<<<<< Updated upstream
                 ? 'Registrar credencial'
                 : 'Abrir os portões'}
+=======
+                ? 'Criar credencial'
+                : 'Entrar'}
+>>>>>>> Stashed changes
           </button>
         </form>
 
         <div className="auth-divider" aria-hidden="true">
+<<<<<<< Updated upstream
           <span>ou atravesse os portões com</span>
+=======
+          <span>ou atravesse os portoes com</span>
+>>>>>>> Stashed changes
         </div>
 
         <button
@@ -136,8 +166,13 @@ export default function AuthScreen({
           disabled={authLoading}
         >
           {isSignup
+<<<<<<< Updated upstream
             ? 'Já possui credencial? Volte ao acervo.'
             : 'Ainda não possui credencial? Registre-se no museu.'}
+=======
+            ? 'Ja possui credencial? Volte ao acervo.'
+            : 'Ainda nao possui credencial? Registre-se no museu.'}
+>>>>>>> Stashed changes
         </button>
       </section>
     </main>

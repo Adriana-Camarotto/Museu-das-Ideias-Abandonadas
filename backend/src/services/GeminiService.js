@@ -54,10 +54,20 @@ function stripJsonMarkdown(text) {
 
 function parseAnalysis(rawText) {
   const cleaned = stripJsonMarkdown(rawText);
+<<<<<<< Updated upstream
   let analysis;
 
   try {
     analysis = JSON.parse(cleaned);
+=======
+  const jsonText = cleaned.startsWith("{")
+    ? cleaned
+    : cleaned.match(/\{[\s\S]*\}/)?.[0];
+  let analysis;
+
+  try {
+    analysis = JSON.parse(jsonText);
+>>>>>>> Stashed changes
   } catch (error) {
     logger.error({ rawText: cleaned, err: error.message }, "Resposta da IA nao e JSON valido");
     throw new Error("Resposta da IA em formato invalido.");
@@ -93,6 +103,7 @@ class GeminiService {
   }
 
   async analisarIdeia(ideia) {
+<<<<<<< Updated upstream
     const provider =
       this.provider === "openrouter" && this.openRouterApiKey
         ? "openrouter"
@@ -100,6 +111,19 @@ class GeminiService {
 
     logger.info(
       { provider, nome: ideia.nome, categoria: ideia.categoria },
+=======
+    const provider = this.resolveProvider();
+
+    logger.info(
+      {
+        provider,
+        nome: ideia.nome,
+        categoria: ideia.categoria,
+        hasGeminiApiKey: Boolean(process.env.GEMINI_API_KEY),
+        hasOpenRouterApiKey: Boolean(this.openRouterApiKey),
+        openRouterModel: provider === "openrouter" ? this.openRouterModel : undefined,
+      },
+>>>>>>> Stashed changes
       "Enviando ideia para analise de IA"
     );
 
@@ -117,6 +141,25 @@ class GeminiService {
     return analysis;
   }
 
+<<<<<<< Updated upstream
+=======
+  resolveProvider() {
+    if (this.provider === "openrouter") {
+      if (!this.openRouterApiKey) {
+        logger.error(
+          { provider: this.provider, hasOpenRouterApiKey: false },
+          "AI_PROVIDER=openrouter sem OPENROUTER_API_KEY"
+        );
+        throw new Error("OPENROUTER_API_KEY nao configurada para AI_PROVIDER=openrouter.");
+      }
+
+      return "openrouter";
+    }
+
+    return "gemini";
+  }
+
+>>>>>>> Stashed changes
   async callGemini(prompt) {
     const result = await getModel().generateContent(prompt);
     return result.response.text();

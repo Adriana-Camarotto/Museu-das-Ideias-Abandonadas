@@ -89,6 +89,10 @@ app.use("/api", apiLimiter);                                 // rate limit geral
 // ─── Rotas da API ─────────────────────────────────────────────────────────────
 
 app.use("/api", healthRouter);
+<<<<<<< Updated upstream
+=======
+app.use("/", healthRouter);
+>>>>>>> Stashed changes
 app.use("/api", ideasRouter);
 app.use("/api", alertsRouter);
 app.use("/api/ai", aiRouter);

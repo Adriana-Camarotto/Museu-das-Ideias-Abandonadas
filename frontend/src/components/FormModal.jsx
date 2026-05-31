@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+<<<<<<< Updated upstream
 import { playMuseumCue } from '../services/museumAudio';
 
 const styles = `
@@ -30,10 +31,15 @@ const styles = `
     animation: scaleUpModal 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 `;
+=======
+import MuseumAtmosphere from './MuseumAtmosphere';
+import { playMuseumCue } from '../services/museumAudio';
+>>>>>>> Stashed changes
 
 export default function FormModal({ isOpen, onClose, children }) {
   useEffect(() => {
     if (!isOpen) return undefined;
+    playMuseumCue('modal');
 
     const styleElement = document.createElement('style');
     styleElement.innerHTML = styles;
@@ -60,6 +66,7 @@ export default function FormModal({ isOpen, onClose, children }) {
 
   return (
     <>
+<<<<<<< Updated upstream
       <div
         className="form-modal-backdrop"
         style={{
@@ -76,6 +83,11 @@ export default function FormModal({ isOpen, onClose, children }) {
         }}
         onClick={onClose}
       />
+=======
+      <div className="museum-modal-backdrop fixed inset-0 z-40 bg-black/55 backdrop-blur-sm" onClick={onClose}>
+        <MuseumAtmosphere variant="modal" />
+      </div>
+>>>>>>> Stashed changes
 
       <div style={{
         position: 'fixed',
@@ -160,6 +172,7 @@ export default function FormModal({ isOpen, onClose, children }) {
                   ✕
                 </button>
 
+<<<<<<< Updated upstream
                 {/* Header */}
                 <div style={{
                   marginBottom: '32px',
@@ -213,6 +226,10 @@ export default function FormModal({ isOpen, onClose, children }) {
                 </div>
               </div>
             </div>
+=======
+          <div className="museum-stone-panel rounded-2xl border border-[rgba(180,140,255,0.18)] bg-[rgba(15,11,24,0.45)] p-4 sm:p-6">
+            {children}
+>>>>>>> Stashed changes
           </div>
         </div>
       </div>

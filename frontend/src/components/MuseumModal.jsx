@@ -4,7 +4,12 @@
  */
 
 import { useEffect } from 'react';
+<<<<<<< Updated upstream
 import { createPortal } from 'react-dom';
+=======
+import MuseumAtmosphere from './MuseumAtmosphere';
+import { playMuseumCue } from '../services/museumAudio';
+>>>>>>> Stashed changes
 
 export default function MuseumModal({
   isOpen,
@@ -21,6 +26,7 @@ export default function MuseumModal({
     };
 
     if (isOpen) {
+      playMuseumCue('modal');
       document.addEventListener('keydown', handleEscape);
       document.body.style.overflow = 'hidden';
     }
@@ -37,6 +43,7 @@ export default function MuseumModal({
     <>
       {/* Backdrop com blur */}
       <div
+<<<<<<< Updated upstream
         style={{
           position: 'fixed',
           top: 0,
@@ -50,6 +57,13 @@ export default function MuseumModal({
         onClick={onClose}
         className="animate-fadeIn"
       />
+=======
+        className="museum-modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm z-40 animate-fadeIn"
+        onClick={onClose}
+      >
+        <MuseumAtmosphere variant="modal" />
+      </div>
+>>>>>>> Stashed changes
 
       {/* Modal - Quadro do Louvre */}
       <div
@@ -78,6 +92,7 @@ export default function MuseumModal({
           <div className="bg-[#0a0608] p-1 rounded-lg shadow-2xl" style={{ border: '1px solid rgba(180, 140, 255, 0.1)' }}>
             {/* Borda interna (dourada envelhecida) */}
             <div className="bg-gradient-to-br from-[#e8b86d]/20 to-[#c4a8ff]/10 p-1 rounded-md">
+<<<<<<< Updated upstream
               {/* Conteúdo interno com Card roxo */}
               <div className="rounded-sm border border-[rgba(232,184,109,0.15)]" style={{ position: 'relative', background: '#161020', padding: '48px' }}>
 
@@ -108,6 +123,11 @@ export default function MuseumModal({
                   ✕
                 </button>
 
+=======
+              {/* Conteúdo interno */}
+              <div className="museum-stone-panel bg-[#0f0b18] rounded-sm p-8 border border-[rgba(232,184,109,0.15)]">
+                
+>>>>>>> Stashed changes
                 {/* Header do Modal */}
                 <div className="mb-8 pb-8 border-b border-[rgba(180,140,255,0.15)]">
                   <div>

@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import './RipModal.css';
+<<<<<<< Updated upstream
 import { playRandomAudio } from '../services/audioRandomizer';
+=======
+>>>>>>> Stashed changes
 
 export default function RipModal({ isOpen, onClose, idea, onConfirm }) {
   const [showSparkles, setShowSparkles] = useState(false);
   const [showCertificate, setShowCertificate] = useState(false);
+<<<<<<< Updated upstream
   const [timeLeft, setTimeLeft] = useState(5);
 
   useEffect(() => {
@@ -21,11 +25,24 @@ export default function RipModal({ isOpen, onClose, idea, onConfirm }) {
         });
       }, 1000);
       return () => clearInterval(timer);
+=======
+
+  useEffect(() => {
+    if (showSparkles) {
+      const timer = setTimeout(() => {
+        setShowSparkles(false);
+        setShowCertificate(true);
+      }, 5000);
+      return () => clearTimeout(timer);
+>>>>>>> Stashed changes
     }
   }, [showSparkles]);
 
   const handleConfirm = () => {
+<<<<<<< Updated upstream
     playRandomAudio('RIP');
+=======
+>>>>>>> Stashed changes
     setShowSparkles(true);
   };
 

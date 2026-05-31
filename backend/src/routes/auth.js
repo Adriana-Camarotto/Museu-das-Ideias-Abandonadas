@@ -47,6 +47,16 @@ async function handleAuth(req, res, mode) {
   const supabase = getSupabaseAuthClient();
 
   if (!supabase) {
+<<<<<<< Updated upstream
+=======
+    if (config.isProduction) {
+      return res.status(503).json({
+        success: false,
+        error: "Supabase Auth nao configurado no backend.",
+      });
+    }
+
+>>>>>>> Stashed changes
     return res.status(200).json({ success: true, data: createDevSession(email) });
   }
 

@@ -17,6 +17,10 @@ export default function Sidebar({ onNavigate }) {
     { id: 'ranking', icon: '🏅', label: 'Ranking do Caos' },
     { id: 'conquistas', icon: '🎖️', label: 'Conquistas' },
     { id: 'timeline', icon: '⌛', label: 'Linha do Tempo', section: 'Explorar' },
+<<<<<<< Updated upstream
+=======
+    { id: 'comunidade', icon: '👥', label: 'Comunidade' },
+>>>>>>> Stashed changes
     { id: 'sobre', icon: 'ℹ️', label: 'Sobre o Museu' }
   ];
 

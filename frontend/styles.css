@@ -321,11 +321,23 @@
 
       .hero-statue {
         position: absolute;
+<<<<<<< Updated upstream
         left: 75%;
         top: 50%;
         transform: translate(-50%, -50%);
         height: 100%;
         width: auto;
+=======
+        right: 40px;
+        top: 0;
+        bottom: 0;
+        width: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.22;
+        font-size: 220px;
+>>>>>>> Stashed changes
         pointer-events: none;
       }
 

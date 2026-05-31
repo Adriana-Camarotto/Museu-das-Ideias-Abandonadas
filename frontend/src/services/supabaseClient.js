@@ -12,9 +12,30 @@ function createNullClient() {
         );
         return { data: null, error: new Error('Supabase nao configurado no frontend.') };
       },
+<<<<<<< Updated upstream
       async getSession() {
         return { data: { session: null }, error: null };
       },
+=======
+      async signInWithPassword() {
+        return { data: null, error: new Error('Supabase nao configurado no frontend.') };
+      },
+      async signUp() {
+        return { data: null, error: new Error('Supabase nao configurado no frontend.') };
+      },
+      async getSession() {
+        return { data: { session: null }, error: null };
+      },
+      onAuthStateChange() {
+        return {
+          data: {
+            subscription: {
+              unsubscribe() {},
+            },
+          },
+        };
+      },
+>>>>>>> Stashed changes
       async signOut() {
         return { error: null };
       },
@@ -22,6 +43,7 @@ function createNullClient() {
   };
 }
 
+<<<<<<< Updated upstream
 let supabaseClient = null;
 
 if (supabaseUrl && supabaseAnonKey) {
@@ -31,6 +53,22 @@ if (supabaseUrl && supabaseAnonKey) {
     '[Supabase] Cliente nao inicializado. Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no frontend.',
   );
   supabaseClient = createNullClient();
+=======
+const supabaseClient = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    })
+  : createNullClient();
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error(
+    '[Supabase] Cliente nao inicializado. Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no frontend.',
+  );
+>>>>>>> Stashed changes
 }
 
 export const supabase = supabaseClient;
