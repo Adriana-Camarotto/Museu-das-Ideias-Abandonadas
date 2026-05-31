@@ -1,158 +1,173 @@
 /**
- * Serviço de Integração com Google Gemini
- * Centraliza toda a lógica de comunicação com a IA
+ * AI service.
+ *
+ * Keeps the public API used by the existing code (`analisarIdeia` and
+ * `getGeminiService`) while selecting the provider at runtime:
+ * - AI_PROVIDER=openrouter uses OpenRouter
+ * - otherwise Gemini is used
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import config from '../config/environment.js';
+import { getModel } from "../config/gemini.js";
+import logger from "../config/logger.js";
 
-class GeminiService {
-  constructor() {
-    try {
-      const genAI = new GoogleGenerativeAI(config.geminiApiKey);
-      this.model = genAI.getGenerativeModel({ model: config.geminiModel });
-      console.log('✅ Google Gemini inicializado com sucesso');
-    } catch (error) {
-      console.error('❌ Erro ao inicializar Gemini:', error.message);
-      throw error;
-    }
-  }
+const PERSONA_PROMPT = `
+Voce e a Curadora do Caos, guardia do Museu das Ideias Abandonadas.
+Sua missao e analisar projetos que nunca sairam do papel com um tom analitico,
+observador, levemente sarcastico e respeitoso.
+O humor deve apontar para padroes humanos universais, nunca para humilhar o criador.
+`.trim();
 
-  /**
-   * Analisa uma ideia abandonada
-   * @param {Object} ideaData - Dados da ideia
-   * @returns {Promise<Object>} Análise da IA
-   */
-  async analyzeIdea(ideaData) {
-    const { nome, categoria, empolgacao, motivo } = ideaData;
+const ANALYSIS_SCHEMA = `
+Retorne APENAS um objeto JSON valido, sem markdown, com estas chaves:
+{
+  "survival_percentage": number,
+  "cause_of_death_summary": "frase curta em no maximo 10 palavras",
+  "ai_verdict": "paragrafo de 2-3 frases"
+}
+`.trim();
 
-    const prompt = `
-Você é a **Curadora do Caos**, guardiã do Museu das Ideias Abandonadas. 
-Sua missão é analisar projetos que nunca saíram do papel com um tom analítico, 
-poético sobre o fracasso e levemente sarcástico - mas sempre confortando o criador.
+function buildAnalysisPrompt({ nome, categoria, empolgacao, motivo }) {
+  return `
+${PERSONA_PROMPT}
 
 Analise esta ideia abandonada:
 
-📋 **Nome da Ideia:** ${nome}
-🏷️ **Categoria:** ${categoria}
-🔥 **Empolgação Inicial:** ${empolgacao}/5
-💀 **Motivo do Abandono:** ${motivo}
+Nome da ideia: ${nome}
+Categoria: ${categoria}
+Empolgacao inicial: ${empolgacao}/5
+Motivo do abandono: ${motivo}
 
-Retorne APENAS um objeto JSON válido (sem markdown, sem \`\`\`json, sem formatação extra) com estas três chaves:
+${ANALYSIS_SCHEMA}
 
-{
-  "survival_percentage": [número de 0 a 100 representando as chances de sobrevivência da ideia],
-  "cause_of_death_summary": "[frase curta e poética resumindo o fracasso em no máximo 10 palavras]",
-  "ai_verdict": "[parágrafo de 2-3 frases com veredito sarcástico mas reconfortante, celebrando o fracasso como parte do processo criativo]"
+Seja criativa, especifica e levemente sarcastica.
+Nao use o termo "fracasso", nao culpe o usuario e nao diga que a pessoa desistiu.
+Termine com uma nota de identificacao ou esperanca discreta.
+`.trim();
 }
 
-Seja criativa, poética e levemente cruel - mas sempre termine com uma nota de esperança.
-`;
+function stripJsonMarkdown(text) {
+  return String(text || "")
+    .replace(/```json\s?/gi, "")
+    .replace(/```\s?/g, "")
+    .trim();
+}
 
-    try {
-      console.log(`🤖 Enviando para Gemini: "${nome}" (${categoria})`);
-      const result = await this.model.generateContent(prompt);
-      const response = result.response;
-      let aiText = response.text();
+function parseAnalysis(rawText) {
+  const cleaned = stripJsonMarkdown(rawText);
+  let analysis;
 
-      console.log('📥 Resposta da IA recebida');
-
-      // Remove possíveis marcações markdown
-      aiText = aiText
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '')
-        .trim();
-
-      // Parse do JSON
-      const aiAnalysis = JSON.parse(aiText);
-
-      // Validação da estrutura
-      if (
-        typeof aiAnalysis.survival_percentage !== 'number' ||
-        typeof aiAnalysis.cause_of_death_summary !== 'string' ||
-        typeof aiAnalysis.ai_verdict !== 'string'
-      ) {
-        throw new Error('Resposta da IA em formato inválido');
-      }
-
-      console.log(`✅ Análise concluída: ${aiAnalysis.survival_percentage}% de sobrevivência`);
-      return aiAnalysis;
-    } catch (error) {
-      console.error('❌ Erro ao analisar ideia:', error.message);
-      throw error;
-    }
+  try {
+    analysis = JSON.parse(cleaned);
+  } catch (error) {
+    logger.error({ rawText: cleaned, err: error.message }, "Resposta da IA nao e JSON valido");
+    throw new Error("Resposta da IA em formato invalido.");
   }
 
-  /**
-   * Gera texto de compartilhamento para WhatsApp
-   * @param {Object} ideaData - Dados da ideia
-   * @returns {Promise<string>} Mensagem formatada
-   */
-  async generateShareText(ideaData) {
-    const { nome, survival_percentage, honor_count } = ideaData;
-
-    const prompt = `
-Você é a Curadora do Caos. Gere uma mensagem viral e poética para compartilhar no WhatsApp sobre esta ideia abandonada:
-
-Nome: ${nome}
-Taxa de Sobrevivência: ${survival_percentage}%
-Homenagens: ${honor_count || 0}
-
-A mensagem deve ser:
-- Curta (máximo 280 caracteres)
-- Poética e sarcástica
-- Incluir emojis temáticos
-- Terminar com esperança
-
-Retorne APENAS a mensagem, sem aspas ou formatação extra.
-`;
-
-    try {
-      const result = await this.model.generateContent(prompt);
-      const message = result.response.text().trim();
-      return message;
-    } catch (error) {
-      console.error('❌ Erro ao gerar texto de compartilhamento:', error.message);
-      throw error;
-    }
+  const survival = Number(analysis.survival_percentage);
+  if (
+    !Number.isFinite(survival) ||
+    typeof analysis.cause_of_death_summary !== "string" ||
+    typeof analysis.ai_verdict !== "string"
+  ) {
+    logger.error({ analysis }, "Resposta da IA sem os campos esperados");
+    throw new Error("Resposta da IA com campos ausentes ou invalidos.");
   }
 
-  /**
-   * Gera epitáfio para ideia "revivida"
-   * @param {Object} ideaData - Dados da ideia
-   * @returns {Promise<string>} Epitáfio poético
-   */
-  async generateEpitaph(ideaData) {
-    const { nome, survival_percentage, honor_count } = ideaData;
+  return {
+    survival_percentage: Math.max(0, Math.min(100, Math.round(survival))),
+    cause_of_death_summary: analysis.cause_of_death_summary.trim(),
+    ai_verdict: analysis.ai_verdict.trim(),
+  };
+}
 
-    const prompt = `
-Você é a Curadora do Caos. Gere um epitáfio poético e sarcástico para esta ideia que foi "revivida" (arquivada):
+class GeminiService {
+  constructor() {
+    this.provider = (process.env.AI_PROVIDER || "gemini").toLowerCase();
+    this.openRouterApiKey = process.env.OPENROUTER_API_KEY;
+    this.openRouterModel =
+      process.env.OPENROUTER_MODEL || "google/gemini-2.0-flash-001";
+  }
 
-Nome: ${nome}
-Taxa de Sobrevivência: ${survival_percentage}%
-Homenagens: ${honor_count || 0}
+  async analyzeIdea(ideia) {
+    return this.analisarIdeia(ideia);
+  }
 
-O epitáfio deve ser:
-- Uma frase única e memorável
-- Poética e sarcástica
-- Celebrar o fracasso como parte do processo criativo
-- Máximo 150 caracteres
+  async analisarIdeia(ideia) {
+    const provider =
+      this.provider === "openrouter" && this.openRouterApiKey
+        ? "openrouter"
+        : "gemini";
 
-Retorne APENAS o epitáfio, sem aspas ou formatação extra.
-`;
+    logger.info(
+      { provider, nome: ideia.nome, categoria: ideia.categoria },
+      "Enviando ideia para analise de IA"
+    );
 
-    try {
-      const result = await this.model.generateContent(prompt);
-      const epitaph = result.response.text().trim();
-      return epitaph;
-    } catch (error) {
-      console.error('❌ Erro ao gerar epitáfio:', error.message);
-      throw error;
+    const prompt = buildAnalysisPrompt(ideia);
+    const rawText =
+      provider === "openrouter"
+        ? await this.callOpenRouter(prompt)
+        : await this.callGemini(prompt);
+
+    const analysis = parseAnalysis(rawText);
+    logger.info(
+      { provider, survival_percentage: analysis.survival_percentage },
+      "Analise de IA concluida"
+    );
+    return analysis;
+  }
+
+  async callGemini(prompt) {
+    const result = await getModel().generateContent(prompt);
+    return result.response.text();
+  }
+
+  async callOpenRouter(prompt) {
+    if (!this.openRouterApiKey) {
+      throw new Error("OPENROUTER_API_KEY nao configurada.");
     }
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.openRouterApiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": process.env.FRONTEND_URL || "http://localhost:5173",
+        "X-Title": "Museu das Ideias Abandonadas",
+      },
+      body: JSON.stringify({
+        model: this.openRouterModel,
+        temperature: 0.8,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content:
+              "Voce responde sempre em JSON valido e nunca usa markdown.",
+          },
+          { role: "user", content: prompt },
+        ],
+      }),
+    });
+
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      logger.error({ status: response.status, payload }, "Erro do OpenRouter");
+      throw new Error(payload?.error?.message || "Falha ao chamar OpenRouter.");
+    }
+
+    return payload?.choices?.[0]?.message?.content;
+  }
+
+  async generateShareText({ nome, survival_percentage = 0, honor_count = 0 }) {
+    return `O Museu tentou compartilhar "${nome}", mas a vergonha historica foi forte demais. Sobrevivencia: ${survival_percentage}%. Homenagens: ${honor_count}.`;
+  }
+
+  async generateEpitaph({ nome, survival_percentage = 0, honor_count = 0 }) {
+    return `${nome}: viveu entre abas abertas, partiu com ${survival_percentage}% de chance e recebeu ${honor_count} homenagens.`;
   }
 }
 
-// Singleton
 let geminiService;
 
 export function getGeminiService() {
@@ -160,6 +175,10 @@ export function getGeminiService() {
     geminiService = new GeminiService();
   }
   return geminiService;
+}
+
+export async function analisarIdeia(ideia) {
+  return getGeminiService().analisarIdeia(ideia);
 }
 
 export default GeminiService;
