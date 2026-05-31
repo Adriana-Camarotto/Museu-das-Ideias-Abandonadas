@@ -521,7 +521,20 @@ export default function App() {
                   key={tab}
                   type="button"
                   className={`mem-tab ${activeMemTab === tab ? 'active' : ''}`}
-                  onClick={() => setActiveMemTab(tab)}
+                  onClick={() => {
+                    setActiveMemTab(tab);
+                    if (window.innerWidth < 768) {
+                      setTimeout(() => {
+                        const tabRefMap = {
+                          'Sobre': memorialSectionRef,
+                          'Linha do Tempo': timelineSectionRef,
+                          'Relíquias': reliquiarySectionRef,
+                          'Conquistas': achievementSectionRef
+                        };
+                        tabRefMap[tab].current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }, 100);
+                    }
+                  }}
                 >
                   {tab}
                 </button>
