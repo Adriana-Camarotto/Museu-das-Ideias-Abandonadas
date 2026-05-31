@@ -79,12 +79,12 @@ app.use("/api", apiLimiter);                                 // rate limit geral
 
 // ─── Arquivos estáticos do frontend ──────────────────────────────────────────
 
-if (fs.existsSync(frontendPath)) {
-  //app.use(express.static(frontendPath));
-  logger.info({ frontendPath }, "Servindo arquivos estáticos do frontend");
-} else {
-  logger.warn({ frontendPath }, "Build do frontend não encontrado — modo API only");
-}
+//if (fs.existsSync(frontendPath)) {
+//  //app.use(express.static(frontendPath));
+//  logger.info({ frontendPath }, "Servindo arquivos estáticos do frontend");
+//} else {
+//  logger.warn({ frontendPath }, "Build do frontend não encontrado — modo API only");
+//}
 
 // ─── Rotas da API ─────────────────────────────────────────────────────────────
 
