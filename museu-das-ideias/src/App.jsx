@@ -446,7 +446,7 @@ export default function App() {
       )}
 
       <FormModal isOpen={isFormModalOpen} onClose={closeModal}>
-        <IdeaForm />
+        <IdeaForm onIdeaAdded={handleNewIdeaAdded} />
       </FormModal>
 
     </div>

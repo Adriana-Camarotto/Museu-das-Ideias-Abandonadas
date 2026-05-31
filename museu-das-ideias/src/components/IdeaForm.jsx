@@ -9,7 +9,7 @@ import { validateIdeaData } from '../utils/validators';
 import { useMuseum } from '../hooks/useMuseum';
 import AnalysisResult from './AnalysisResult';
 
-export default function IdeaForm() {
+export default function IdeaForm({ onIdeaAdded }) {
   const { setAnalysisResult, setAnalysisLoading, setAnalysisError } = useMuseum();
   
   const [formData, setFormData] = useState({
@@ -47,6 +47,12 @@ export default function IdeaForm() {
       setResult(analysis);
       setIdeaId(analysis.id);
       setAnalysisResult(analysis);
+      
+      // Callback para atualizar a lista de ideias no App.jsx
+      // Permite que a nova ideia apareça instantaneamente sem reload
+      if (onIdeaAdded && typeof onIdeaAdded === 'function') {
+        onIdeaAdded(analysis);
+      }
     } catch (err) {
       const errorMessage = err.message || 'Erro ao analisar ideia';
       setError(errorMessage);

@@ -45,15 +45,26 @@ class IdeaController {
       };
       const savedIdea = IdeaStorageService.createIdea(ideaData);
 
+      // Formatar resposta com todos os campos necessários para o frontend
+      // O frontend precisa de: id, nome, categoria, empolgacao, motivo, icon, dates, cause, survival_percentage, ai_verdict
+      const formattedResponse = {
+        id: savedIdea.id,
+        nome,
+        categoria,
+        empolgacao,
+        motivo,
+        icon: '🕯️', // Emoji padrão para ideias
+        dates: `${new Date().getFullYear()} – ${new Date().getFullYear()}`, // Formato: YYYY – YYYY
+        cause: analysis.cause_of_death_summary,
+        survival_percentage: analysis.survival_percentage,
+        ai_verdict: analysis.ai_verdict,
+        honor_count: 0, // Inicializa com 0 velas
+      };
+
       // Resposta
       return res.status(200).json({
         success: true,
-        data: {
-          id: savedIdea.id,
-          survival_percentage: analysis.survival_percentage,
-          cause_of_death_summary: analysis.cause_of_death_summary,
-          ai_verdict: analysis.ai_verdict,
-        },
+        data: formattedResponse,
       });
     } catch (error) {
       console.error('❌ Erro ao processar ideia:', error);
