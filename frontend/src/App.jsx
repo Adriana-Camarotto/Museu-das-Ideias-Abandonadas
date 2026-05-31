@@ -234,7 +234,29 @@ export default function App() {
                     }}
                   >
                     <span>{card.icon}</span>
-                    <div className="idea-rip">🪦 RIP</div>
+                    <button
+                      type="button"
+                      className="idea-rip"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRipClick(card);
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'inherit',
+                        padding: '0',
+                        fontSize: 'inherit',
+                        fontWeight: 'inherit',
+                        margin: '0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      🪦 RIP
+                    </button>
                   </div>
                   <div className="idea-body">
                     <div className="idea-name">{card.name}</div>
