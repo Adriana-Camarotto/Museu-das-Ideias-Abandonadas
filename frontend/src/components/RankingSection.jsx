@@ -12,28 +12,28 @@ export default function RankingSection() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const fetchRanking = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`${API_ENDPOINTS.baseUrl}/api/ranking?limit=5`);
+        const data = await response.json();
+
+        if (data.success) {
+          setRanking(data.data);
+        } else {
+          setError(data.error);
+        }
+      } catch (err) {
+        setError('Erro ao carregar ranking');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchRanking();
   }, []);
-
-  const fetchRanking = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`${API_ENDPOINTS.baseUrl}/api/ranking?limit=5`);
-      const data = await response.json();
-
-      if (data.success) {
-        setRanking(data.data);
-      } else {
-        setError(data.error);
-      }
-    } catch (err) {
-      setError('Erro ao carregar ranking');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="ranking-section">

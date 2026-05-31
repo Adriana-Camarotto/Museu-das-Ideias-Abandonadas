@@ -7,7 +7,7 @@ import { createContext, useState, useCallback } from 'react';
 
 export const MuseumContext = createContext();
 
-export function MuseumProvider({ children }) {
+function MuseumProvider({ children }) {
   // Estado de navegação
   const [activeModal, setActiveModal] = useState(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -97,3 +97,5 @@ export function MuseumProvider({ children }) {
     </MuseumContext.Provider>
   );
 }
+
+export { MuseumProvider };
