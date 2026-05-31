@@ -7,8 +7,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const requiredEnvVars = ['GEMINI_API_KEY'];
-const optionalEnvVars = ['PORT', 'NODE_ENV', 'FRONTEND_URL', 'SUPABASE_URL', 'SUPABASE_ANON_KEY'];
+const provider = (process.env.AI_PROVIDER || 'gemini').toLowerCase();
+const requiredEnvVars = provider === 'openrouter' ? ['OPENROUTER_API_KEY'] : ['GEMINI_API_KEY'];
 
 // Validar variáveis obrigatórias
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
@@ -25,6 +25,11 @@ export const config = {
   // Google Gemini
   geminiApiKey: process.env.GEMINI_API_KEY,
   geminiModel: 'gemini-2.5-flash',
+
+  // IA
+  aiProvider: provider,
+  openRouterApiKey: process.env.OPENROUTER_API_KEY,
+  openRouterModel: process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-001',
 
   // Supabase
   supabaseUrl: process.env.SUPABASE_URL,

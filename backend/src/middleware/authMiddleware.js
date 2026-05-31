@@ -14,8 +14,14 @@
 import { createClient } from '@supabase/supabase-js';
 import config from '../config/environment.js';
 
-// Inicializar cliente Supabase
-const supabase = createClient(config.supabaseUrl, config.supabaseAnonKey);
+// Inicializar cliente Supabase (apenas se configurado)
+let supabase = null;
+if (config.supabaseUrl && config.supabaseAnonKey) {
+  supabase = createClient(config.supabaseUrl, config.supabaseAnonKey);
+  console.log('✅ Supabase Auth inicializado');
+} else {
+  console.warn('⚠️  Supabase não configurado - autenticação desabilitada');
+}
 
 /**
  * Middleware de autenticação
@@ -23,6 +29,19 @@ const supabase = createClient(config.supabaseUrl, config.supabaseAnonKey);
  */
 export async function authMiddleware(req, res, next) {
   try {
+    const devUser = parseDevAuth(req);
+    if (devUser) {
+      req.user = devUser;
+      return next();
+    }
+
+    // Se Supabase não está configurado, pula autenticação
+    if (!supabase) {
+      console.warn('⚠️  Supabase não configurado - pulando autenticação');
+      req.user = null;
+      return next();
+    }
+
     // 1. Ler header Authorization
     const authHeader = req.headers.authorization;
 
@@ -74,6 +93,18 @@ export async function authMiddleware(req, res, next) {
  */
 export async function optionalAuthMiddleware(req, res, next) {
   try {
+    const devUser = parseDevAuth(req);
+    if (devUser) {
+      req.user = devUser;
+      return next();
+    }
+
+    // Se Supabase não está configurado, pula autenticação
+    if (!supabase) {
+      req.user = null;
+      return next();
+    }
+
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -106,12 +137,41 @@ export async function optionalAuthMiddleware(req, res, next) {
   }
 }
 
+function parseDevAuth(req) {
+  if (process.env.NODE_ENV === 'production') return null;
+
+  const authHeader = req.headers.authorization || '';
+  if (!authHeader.startsWith('Bearer dev:')) return null;
+
+  const [id = 'dev-user', email = 'dev@localhost'] = authHeader
+    .substring('Bearer dev:'.length)
+    .split(':');
+
+  return {
+    id,
+    email: decodeURIComponent(email),
+    metadata: { provider: 'dev' },
+  };
+}
+
 /**
  * Middleware para verificar se usuário está autenticado
  * Usa req.user criado pelo authMiddleware
+ * Em desenvolvimento sem Supabase, cria usuário fake
  */
 export function requireAuth(req, res, next) {
+  // Se Supabase não está configurado (desenvolvimento), cria usuário fake
   if (!req.user) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('⚠️  Modo desenvolvimento - criando usuário fake');
+      req.user = {
+        id: process.env.DEV_USER_ID || 'dev-user',
+        email: 'dev@localhost',
+        metadata: {},
+      };
+      return next();
+    }
+
     return res.status(401).json({
       success: false,
       error: 'Autenticação necessária',
