@@ -6,6 +6,7 @@ import IdeaForm from './components/IdeaForm';
 import FormModal from './components/FormModal';
 import RipModal from './components/RipModal';
 import { subscribeToAlerts } from './services/ideaService';
+import { playRandomAudio } from './services/audioRandomizer';
 
 export default function App() {
   const [activeModal, setActiveModal] = useState(null);
@@ -221,8 +222,6 @@ export default function App() {
               Preservamos sonhos interrompidos, planos mirabolantes e projetos que não viraram realidade.
             </p>
             <div className="hero-btns">
-              <button className="btn-primary" type="button">Entrar no Museu ✦</button>
-              <button className="btn-outline" type="button">🎫 Fazer visita guiada</button>
             </div>
             <div className="hero-stats">
               <div><div className="hero-stat-label">Ideias enterradas</div><div className="hero-stat-val">12.842</div></div>
@@ -626,7 +625,7 @@ export default function App() {
           <section className="footer-widget">
             <div className="footer-title">📱 Compartilhar memorial</div>
             <div className="footer-sub">Mostre para o mundo o seu potencial desperdiçado.</div>
-            <button className="btn-primary" type="button" style={{ fontSize: '12px' }}>📩 Gerar card para compartilhar</button>
+            <button className="btn-primary" type="button" style={{ fontSize: '12px' }} onClick={() => playRandomAudio('Gerar card para compartilhar')}>📩 Gerar card para compartilhar</button>
           </section>
 
           <section className="footer-widget">

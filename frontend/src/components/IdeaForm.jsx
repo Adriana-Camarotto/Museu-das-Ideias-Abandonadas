@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { analyzeIdea } from '../services/ideaService';
 import AnalysisResult from './AnalysisResult';
+import { playRandomAudio } from '../services/audioRandomizer';
 
 const formStyles = `
   @keyframes slideInUp {
@@ -201,6 +202,8 @@ export default function IdeaForm({ onIdeaAdded }) {
     setLoading(true);
     setError(null);
     setResult(null);
+
+    playRandomAudio('Analisar Ideia');
 
     try {
       const analysis = await analyzeIdea(formData);

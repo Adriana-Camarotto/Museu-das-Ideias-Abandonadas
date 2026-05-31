@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import './RipModal.css';
+import { playRandomAudio } from '../services/audioRandomizer';
 
 export default function RipModal({ isOpen, onClose, idea, onConfirm }) {
   const [showSparkles, setShowSparkles] = useState(false);
@@ -24,6 +25,7 @@ export default function RipModal({ isOpen, onClose, idea, onConfirm }) {
   }, [showSparkles]);
 
   const handleConfirm = () => {
+    playRandomAudio('RIP');
     setShowSparkles(true);
   };
 
