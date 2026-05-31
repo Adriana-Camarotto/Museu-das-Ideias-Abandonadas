@@ -14,6 +14,29 @@ export default function App() {
   const [activeFilter, setActiveFilter] = useState('Todas');
   const [activeMemTab, setActiveMemTab] = useState('Sobre');
   const [activeRankTab, setActiveRankTab] = useState('Geral');
+  const rankData = {
+    'Geral': [
+      { pos: 1, avatar: '👑', name: 'Rainha dos Começos', count: 142 },
+      { pos: 2, avatar: '🐐', name: 'Mestre da Procrastinação', count: 97 },
+      { pos: 3, avatar: '⚡', name: 'Deus do Potencial', count: 73 },
+      { pos: 4, avatar: '🔮', name: 'Imperador dos "Amanhãs"', count: 65 },
+      { pos: 5, avatar: '🧩', name: 'Senhor das Abas Abertas', count: 61 },
+    ],
+    'Por categoria': [
+      { pos: 1, avatar: '💼', name: 'Empreendedorismo', count: 4821 },
+      { pos: 2, avatar: '📚', name: 'Estudos', count: 3104 },
+      { pos: 3, avatar: '💪', name: 'Fitness', count: 2877 },
+      { pos: 4, avatar: '🎨', name: 'Criativas', count: 1943 },
+      { pos: 5, avatar: '🗂️', name: 'Organização', count: 1097 },
+    ],
+    'Por causa da morte': [
+      { pos: 1, avatar: '😴', name: 'Procrastinação crônica', count: 3842 },
+      { pos: 2, avatar: '💸', name: 'Falta de dinheiro', count: 2761 },
+      { pos: 3, avatar: '😩', name: 'Burnout no dia 3', count: 2104 },
+      { pos: 4, avatar: '📱', name: 'Distração com redes sociais', count: 1983 },
+      { pos: 5, avatar: '🤷', name: 'Simplesmente desistiu', count: 1560 },
+    ],
+  };
   const [selectedMood, setSelectedMood] = useState(4);
   const [abandonReason, setAbandonReason] = useState('');
   const [newsletterEmail, setNewsletterEmail] = useState('');
@@ -69,10 +92,10 @@ export default function App() {
       'inicio': () => mainRef.current?.parentElement?.scrollTo({ top: 0, behavior: 'smooth' }),
       'museu': () => scrollToElement(museumSectionRef),
       'memorial': () => setActiveModal('memorial'),
-      'reliquias': () => scrollToElement(reliquiarySectionRef),
+      'reliquias': () => { setActiveMemTab('Relíquias'); scrollToElement(reliquiarySectionRef); },
       'ranking': () => scrollToElement(rankingSectionRef),
-      'conquistas': () => scrollToElement(achievementSectionRef),
-      'timeline': () => scrollToElement(timelineSectionRef),
+      'conquistas': () => { setActiveMemTab('Conquistas'); scrollToElement(achievementSectionRef); },
+      'timeline': () => { setActiveMemTab('Linha do Tempo'); scrollToElement(timelineSectionRef); },
       'comunidade': () => scrollToElement(museumSectionRef),
       'sobre': () => setActiveModal('about')
     };
@@ -329,6 +352,57 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '18px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <div className="sec-title rank-glitch-title" style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em' }} data-text="Rankings do caos">Rankings do caos</div>
+                <div className="rank-live-badge"><span className="rank-live-dot"></span>AO VIVO</div>
+              </div>
+              <div className="rank-tabs">
+                {['Geral', 'Por categoria', 'Por causa da morte'].map((tab) => (
+                  <button key={tab} className={`rank-tab ${activeRankTab === tab ? 'active' : ''}`} type="button" onClick={() => setActiveRankTab(tab)}>{tab}</button>
+                ))}
+              </div>
+              {(() => {
+                const items = rankData[activeRankTab];
+                const top3 = items.slice(0, 3);
+                const rest = items.slice(3);
+                const maxCount = items[0].count;
+                const podiumOrder = [top3[1], top3[0], top3[2]];
+                const podiumHeights = [70, 90, 55];
+                const podiumColors = ['#a0a8b8', '#e8b86d', '#c87941'];
+                const podiumLabels = ['2º', '1º', '3º'];
+                return (
+                  <>
+                    <div className="rank-podium">
+                      {podiumOrder.map((item, i) => (
+                        <div key={item.name} className="rank-podium-item" style={{ '--podium-height': `${podiumHeights[i]}px`, '--podium-color': podiumColors[i] }}>
+                          <div className="rank-podium-avatar">{item.avatar}</div>
+                          <div className="rank-podium-name">{item.name}</div>
+                          <div className="rank-podium-count">{item.count.toLocaleString()}</div>
+                          <div className="rank-podium-base">
+                            <span className="rank-podium-pos" style={{ color: podiumColors[i] }}>{podiumLabels[i]}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {rest.map((item) => (
+                      <div key={item.name} className="rank-item rank-item-bar">
+                        <div className="rank-num">{item.pos}.</div>
+                        <div className="rank-avatar">{item.avatar}</div>
+                        <div className="rank-info">
+                          <div className="rank-name">{item.name}</div>
+                          <div className="rank-bar">
+                            <div className="rank-bar-fill" style={{ width: `${(item.count / maxCount) * 100}%` }}></div>
+                          </div>
+                        </div>
+                        <div className="rank-count" style={{ whiteSpace: 'nowrap', fontSize: '10px' }}>{item.count.toLocaleString()}</div>
+                      </div>
+                    ))}
+                  </>
+                );
+              })()}
+            </div>
           </div>
         </div>
 
@@ -403,7 +477,7 @@ export default function App() {
             </div>
 
             <div className="memorial-tabs">
-              {['Sobre', 'Linha do Tempo', 'Relíquias', 'Estatísticas', 'Conquistas'].map((tab) => (
+              {['Sobre', 'Linha do Tempo', 'Relíquias', 'Conquistas'].map((tab) => (
                 <button
                   key={tab}
                   type="button"
@@ -462,28 +536,7 @@ export default function App() {
             </div>
           </section>
 
-          <section className="bottom-sec" ref={rankingSectionRef} style={{ background: activeMemTab === 'Estatísticas' ? 'var(--bg3)' : 'transparent', padding: activeMemTab === 'Estatísticas' ? '12px' : '20px', margin: activeMemTab === 'Estatísticas' ? '8px' : '0', borderRadius: activeMemTab === 'Estatísticas' ? 'var(--radius-sm)' : '0', boxShadow: activeMemTab === 'Estatísticas' ? '0 0 20px rgba(155, 127, 244, 0.6), 0 0 40px rgba(155, 127, 244, 0.3)' : 'none', transition: 'all 0.2s' }}>
-            <div className="sec-header">
-              <div className="sec-title" style={{ fontSize: '14px' }}>Rankings do caos</div>
-            </div>
-            <div className="rank-tabs">
-              {['Geral', 'Por categoria', 'Por causa da morte'].map((tab) => (
-                <button
-                  key={tab}
-                  className={`rank-tab ${activeRankTab === tab ? 'active' : ''}`}
-                  type="button"
-                  onClick={() => setActiveRankTab(tab)}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-            <div className="rank-item"><div className="rank-num">1.</div><div className="rank-avatar">👑</div><div className="rank-info"><div className="rank-name">Rainha dos Começos</div><div className="rank-count">142 ideias abandonadas</div></div></div>
-            <div className="rank-item"><div className="rank-num">2.</div><div className="rank-avatar">🐐</div><div className="rank-info"><div className="rank-name">Mestre da Procrastinação</div><div className="rank-count">97 ideias abandonadas</div></div></div>
-            <div className="rank-item"><div className="rank-num">3.</div><div className="rank-avatar">⚡</div><div className="rank-info"><div className="rank-name">Deus do Potencial</div><div className="rank-count">73 ideias abandonadas</div></div></div>
-            <div className="rank-item"><div className="rank-num">4.</div><div className="rank-avatar">🔮</div><div className="rank-info"><div className="rank-name">Imperador dos "Amanhãs"</div><div className="rank-count">65 ideias abandonadas</div></div></div>
-            <div className="rank-item"><div className="rank-num">5.</div><div className="rank-avatar">🧩</div><div className="rank-info"><div className="rank-name">Senhor das Abas Abertas</div><div className="rank-count">61 ideias abandonadas</div></div></div>
-          </section>
+          <section className="bottom-sec" ref={rankingSectionRef} style={{ display: 'none' }} />
 
           <section className="bottom-sec" ref={achievementSectionRef} style={{ background: activeMemTab === 'Conquistas' ? 'var(--bg3)' : 'transparent', padding: activeMemTab === 'Conquistas' ? '12px' : '20px', margin: activeMemTab === 'Conquistas' ? '8px' : '0', borderRadius: activeMemTab === 'Conquistas' ? 'var(--radius-sm)' : '0', boxShadow: activeMemTab === 'Conquistas' ? '0 0 20px rgba(155, 127, 244, 0.6), 0 0 40px rgba(155, 127, 244, 0.3)' : 'none', transition: 'all 0.2s' }}>
             <div className="sec-header">
