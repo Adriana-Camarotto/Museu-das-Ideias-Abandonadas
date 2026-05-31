@@ -1,4 +1,4 @@
--- Museu das Ideias Abandonadas - Supabase schema
+  -- Museu das Ideias Abandonadas - Supabase schema
 -- Run this in the Supabase SQL editor before enabling persistence.
 
 create extension if not exists "pgcrypto";
