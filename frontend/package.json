@@ -31,5 +31,8 @@
     "vite": "^8.0.12"
   },
   "description": "Museu das Ideias Abandonadas - Análise de ideias com IA",
-  "license": "MIT"
+  "license": "MIT",
+  "optionalDependencies": {
+    "@rolldown/binding-darwin-arm64": "^1.0.2"
+  }
 }
