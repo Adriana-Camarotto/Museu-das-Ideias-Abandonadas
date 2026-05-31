@@ -5,6 +5,7 @@ import { MODAL_CONTENTS } from './components/ModalContent';
 import IdeaForm from './components/IdeaForm';
 import FormModal from './components/FormModal';
 import { subscribeToAlerts } from './services/ideaService';
+import { authService } from './services/authService';
 
 export default function App() {
   // Estado da UI
@@ -14,8 +15,6 @@ export default function App() {
   const [activeFilter, setActiveFilter] = useState('Todas');
   const [activeMemTab, setActiveMemTab] = useState('Sobre');
   const [activeRankTab, setActiveRankTab] = useState('Geral');
-  const [selectedMood, setSelectedMood] = useState(4);
-  const [abandonReason, setAbandonReason] = useState('');
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterFeedback, setNewsletterFeedback] = useState(null);
   const [newsletterLoading, setNewsletterLoading] = useState(false);
@@ -35,18 +34,13 @@ export default function App() {
   const timelineSectionRef = useRef(null);
 
   // Carrega ideias do backend ao montar o componente
-  // useEffect sem dependências = executa uma única vez ao montar
   useEffect(() => {
     const fetchIdeas = async () => {
       try {
         setLoadingIdeas(true);
         const response = await fetch('http://localhost:3001/api/ideas', {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            // Adicionar token JWT se disponível (será necessário quando autenticação estiver ativa)
-            // 'Authorization': `Bearer ${token}`
-          },
+          headers: authService.getAuthHeaders(),
         });
 
         if (!response.ok) {
@@ -60,7 +54,7 @@ export default function App() {
           setIdeas(data.data);
           // Define a primeira ideia como selecionada para o memorial
           if (data.data.length > 0) {
-            setSelectedCandleIdea(data.data[0].nome);
+            setSelectedCandleIdea(data.data[0].id);
           }
         }
       } catch (error) {

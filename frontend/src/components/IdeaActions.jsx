@@ -5,8 +5,9 @@
 
 import { useState } from 'react';
 import { API_ENDPOINTS } from '../config/api';
+import { authService } from '../services/authService';
 
-export default function IdeaActions({ ideaId, ideaNome, onActionComplete }) {
+export default function IdeaActions({ ideaId, onActionComplete }) {
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState(null);
 
@@ -14,31 +15,29 @@ export default function IdeaActions({ ideaId, ideaNome, onActionComplete }) {
     setLoading(true);
     setFeedback(null);
     try {
-      const response = await fetch(`${API_ENDPOINTS.baseUrl}/api/ideias/${ideaId}/reviver`, {
+      const response = await fetch(`${API_ENDPOINTS.baseUrl}/api/ideas/${ideaId}/revive`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authService.getAuthHeaders(),
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao reviver ideia');
+      }
 
       const data = await response.json();
 
-      if (data.success) {
-        setFeedback({
-          type: 'success',
-          message: '💀 Ideia arquivada com sucesso!',
-        });
-        if (onActionComplete) onActionComplete();
-      } else {
-        setFeedback({
-          type: 'error',
-          message: data.error || 'Erro ao arquivar ideia',
-        });
-      }
+      setFeedback({
+        type: 'success',
+        message: '💀 Ideia revivida com sucesso!',
+      });
+      if (onActionComplete) onActionComplete();
     } catch (error) {
       setFeedback({
         type: 'error',
-        message: 'Erro ao arquivar ideia',
+        message: error.message || 'Erro ao reviver ideia',
       });
-      console.error(error);
+      console.error('Erro ao reviver:', error);
     } finally {
       setLoading(false);
     }
@@ -48,31 +47,29 @@ export default function IdeaActions({ ideaId, ideaNome, onActionComplete }) {
     setLoading(true);
     setFeedback(null);
     try {
-      const response = await fetch(`${API_ENDPOINTS.baseUrl}/api/ideias/${ideaId}/homenagear`, {
+      const response = await fetch(`${API_ENDPOINTS.baseUrl}/api/ideas/${ideaId}/honor`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authService.getAuthHeaders(),
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao homenagear ideia');
+      }
 
       const data = await response.json();
 
-      if (data.success) {
-        setFeedback({
-          type: 'success',
-          message: `🏆 Homenagem adicionada! (Total: ${data.data.honor_count})`,
-        });
-        if (onActionComplete) onActionComplete();
-      } else {
-        setFeedback({
-          type: 'error',
-          message: data.error || 'Erro ao homenagear ideia',
-        });
-      }
+      setFeedback({
+        type: 'success',
+        message: `🏆 Homenagem adicionada! (Total: ${data.data?.honor_count || 1})`,
+      });
+      if (onActionComplete) onActionComplete();
     } catch (error) {
       setFeedback({
         type: 'error',
-        message: 'Erro ao homenagear ideia',
+        message: error.message || 'Erro ao homenagear ideia',
       });
-      console.error(error);
+      console.error('Erro ao homenagear:', error);
     } finally {
       setLoading(false);
     }
@@ -82,38 +79,20 @@ export default function IdeaActions({ ideaId, ideaNome, onActionComplete }) {
     setLoading(true);
     setFeedback(null);
     try {
-      const response = await fetch(`${API_ENDPOINTS.baseUrl}/api/ideias/${ideaId}/compartilhar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ platform: 'whatsapp' }),
+      // Compartilhamento simples - copia o link para clipboard
+      const shareUrl = `${window.location.origin}?idea=${ideaId}`;
+      await navigator.clipboard.writeText(shareUrl);
+      
+      setFeedback({
+        type: 'success',
+        message: '📋 Link copiado! Compartilhe com seus amigos.',
       });
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Copiar mensagem para clipboard
-        navigator.clipboard.writeText(data.data.message);
-        setFeedback({
-          type: 'success',
-          message: '📋 Mensagem copiada! Abra WhatsApp para compartilhar.',
-        });
-
-        // Abrir WhatsApp
-        setTimeout(() => {
-          window.open(data.data.whatsappUrl, '_blank');
-        }, 500);
-      } else {
-        setFeedback({
-          type: 'error',
-          message: data.error || 'Erro ao gerar mensagem',
-        });
-      }
     } catch (error) {
       setFeedback({
         type: 'error',
         message: 'Erro ao compartilhar ideia',
       });
-      console.error(error);
+      console.error('Erro ao compartilhar:', error);
     } finally {
       setLoading(false);
     }

@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { API_ENDPOINTS } from '../config/api';
+import { authService } from '../services/authService';
 
 export default function RankingSection() {
   const [ranking, setRanking] = useState([]);
@@ -16,13 +17,24 @@ export default function RankingSection() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${API_ENDPOINTS.baseUrl}/api/ranking?limit=5`);
+        const response = await fetch(`${API_ENDPOINTS.baseUrl}/api/ideas?limit=5`, {
+          headers: authService.getAuthHeaders(),
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao carregar ranking');
+        }
+
         const data = await response.json();
 
-        if (data.success) {
-          setRanking(data.data);
+        if (data.success && Array.isArray(data.data)) {
+          // Ordenar por honor_count
+          const sorted = data.data
+            .sort((a, b) => (b.honor_count || 0) - (a.honor_count || 0))
+            .slice(0, 5);
+          setRanking(sorted);
         } else {
-          setError(data.error);
+          setError('Erro ao carregar ranking');
         }
       } catch (err) {
         setError('Erro ao carregar ranking');
