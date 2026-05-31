@@ -74,18 +74,18 @@ export async function subscribeToAlerts(email) {
     }
 
     return data;
-  } catch (err) {
-    console.error("Erro ao assinar alertas:", err);
+  } catch (error) {
+    console.error("Erro ao assinar alertas:", error);
 
     if (
-      err instanceof TypeError &&
-      err.message.includes("Failed to fetch")
+      error instanceof TypeError &&
+      error.message.includes("Failed to fetch")
     ) {
       throw new Error(
         "Nao foi possivel conectar ao backend (http://localhost:3001). Verifique se o servidor backend esta em execucao.",
       );
     }
 
-    throw err;
+    throw error;
   }
 }

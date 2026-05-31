@@ -14,6 +14,8 @@ export default function App() {
   const [activeFilter, setActiveFilter] = useState('Todas');
   const [activeMemTab, setActiveMemTab] = useState('Sobre');
   const [activeRankTab, setActiveRankTab] = useState('Geral');
+  const [selectedMood, setSelectedMood] = useState(4);
+  const [abandonReason, setAbandonReason] = useState('');
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterFeedback, setNewsletterFeedback] = useState(null);
   const [newsletterLoading, setNewsletterLoading] = useState(false);
@@ -85,7 +87,9 @@ export default function App() {
 
   const filters = ['Todas', 'Empreendedorismo', 'Estudos', 'Fitness', 'Hobbies', 'Criativas', 'Organização', 'Outros'];
   const survivalPcts = [7, 13, 19, 31, 48];
-  const survivalPct = survivalPcts[2] ?? 13;
+  const survivalPct = survivalPcts[selectedMood] ?? 13;
+
+  const handleNavigate = (section) => {
     setActiveModal(null);
 
     const scrollToElement = (ref) => {
@@ -121,6 +125,8 @@ export default function App() {
     }));
     setIsVideoModalOpen(true);
   };
+
+  const selectedIdea = museumCards.find(card => card.name === selectedCandleIdea) || museumCards[0];
 
   const handleNewsletterSubscribe = async () => {
     const email = newsletterEmail.trim();
