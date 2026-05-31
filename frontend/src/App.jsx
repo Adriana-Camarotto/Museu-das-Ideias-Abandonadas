@@ -460,7 +460,6 @@ export default function App() {
               <div className="relic-item"><div className="relic-icon">🏷️</div><div className="relic-name">Rascunho do logo (nunca usado)</div></div>
               <div className="relic-item"><div className="relic-icon">🛒</div><div className="relic-name">Embalagens compradas por impulso</div></div>
             </div>
-            <button className="btn-outline" type="button" style={{ width: '100%', marginTop: '12px', fontSize: '12px' }}>Ver todas as relíquias</button>
           </section>
 
           <section className="bottom-sec" ref={rankingSectionRef} style={{ background: activeMemTab === 'Estatísticas' ? 'var(--bg3)' : 'transparent', padding: activeMemTab === 'Estatísticas' ? '12px' : '20px', margin: activeMemTab === 'Estatísticas' ? '8px' : '0', borderRadius: activeMemTab === 'Estatísticas' ? 'var(--radius-sm)' : '0', boxShadow: activeMemTab === 'Estatísticas' ? '0 0 20px rgba(155, 127, 244, 0.6), 0 0 40px rgba(155, 127, 244, 0.3)' : 'none', transition: 'all 0.2s' }}>
@@ -484,7 +483,6 @@ export default function App() {
             <div className="rank-item"><div className="rank-num">3.</div><div className="rank-avatar">⚡</div><div className="rank-info"><div className="rank-name">Deus do Potencial</div><div className="rank-count">73 ideias abandonadas</div></div></div>
             <div className="rank-item"><div className="rank-num">4.</div><div className="rank-avatar">🔮</div><div className="rank-info"><div className="rank-name">Imperador dos "Amanhãs"</div><div className="rank-count">65 ideias abandonadas</div></div></div>
             <div className="rank-item"><div className="rank-num">5.</div><div className="rank-avatar">🧩</div><div className="rank-info"><div className="rank-name">Senhor das Abas Abertas</div><div className="rank-count">61 ideias abandonadas</div></div></div>
-            <button className="btn-outline" type="button" style={{ width: '100%', marginTop: '8px', fontSize: '12px' }}>Ver ranking completo</button>
           </section>
 
           <section className="bottom-sec" ref={achievementSectionRef} style={{ background: activeMemTab === 'Conquistas' ? 'var(--bg3)' : 'transparent', padding: activeMemTab === 'Conquistas' ? '12px' : '20px', margin: activeMemTab === 'Conquistas' ? '8px' : '0', borderRadius: activeMemTab === 'Conquistas' ? 'var(--radius-sm)' : '0', boxShadow: activeMemTab === 'Conquistas' ? '0 0 20px rgba(155, 127, 244, 0.6), 0 0 40px rgba(155, 127, 244, 0.3)' : 'none', transition: 'all 0.2s' }}>
