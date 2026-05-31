@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.106.2",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
@@ -31,5 +32,8 @@
     "vite": "^8.0.12"
   },
   "description": "Museu das Ideias Abandonadas - Análise de ideias com IA",
-  "license": "MIT"
+  "license": "MIT",
+  "optionalDependencies": {
+    "@rolldown/binding-darwin-arm64": "^1.0.2"
+  }
 }
