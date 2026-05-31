@@ -7,6 +7,7 @@ import FormModal from './components/FormModal';
 import RipModal from './components/RipModal';
 import { subscribeToAlerts } from './services/ideaService';
 import { playRandomAudio } from './services/audioRandomizer';
+import heroImage from './images/FA98EE2C-9D78-439E-BEC5-8D21ABE448C7.webp';
 
 export default function App() {
   const [activeModal, setActiveModal] = useState(null);
@@ -214,7 +215,7 @@ export default function App() {
         </header>
 
         <section className="hero">
-          <div className="hero-statue">🗿</div>
+          <img src={heroImage} alt="Museu das Ideias Abandonadas" className="hero-statue" />
           <div className="hero-inner">
             <div className="hero-tag">Bem-vindo ao</div>
             <h1>Museu das Ideias Abandonadas</h1>
