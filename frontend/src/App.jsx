@@ -317,14 +317,33 @@ export default function App() {
         mainRef.current?.parentElement?.scrollTo({ top: 0, behavior: 'smooth' });
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },
-      'museu': () => scrollToElement(museumSectionRef),
+      'museu': () => {
+        setMuseumViewMode('recentes');
+        scrollToElement(museumSectionRef);
+      },
       'memorial': () => {
+        if (!selectedCandleIdea && museumCards[0]?.name) {
+          setSelectedCandleIdea(museumCards[0].name);
+        }
         setActiveMemTab('Sobre');
         scrollToElement(memorialSectionRef);
       },
-      'reliquias': () => scrollToElement(reliquiarySectionRef),
-      'ranking': () => scrollToElement(rankingSectionRef),
-      'conquistas': () => scrollToElement(achievementSectionRef),
+      'reliquias': () => {
+        if (!selectedCandleIdea && museumCards[0]?.name) {
+          setSelectedCandleIdea(museumCards[0].name);
+        }
+        setActiveMemTab('Relíquias');
+        setActiveModal('relics');
+      },
+      'ranking': () => {
+        setActiveRankTab('Geral');
+        setActiveMemTab('Estatísticas');
+        setActiveModal('ranking');
+      },
+      'conquistas': () => {
+        setActiveMemTab('Conquistas');
+        setActiveModal('achievements');
+      },
       'timeline': () => scrollToElement(timelineSectionRef),
       'comunidade': () => setActiveModal('community'),
       'sobre': () => setActiveModal('about')
@@ -1396,15 +1415,17 @@ export default function App() {
         </div>
 
         <div className="bottom-grid" onClick={handleBottomGridClick}>
-          <section className="bottom-sec" ref={timelineSectionRef} style={{ background: activeMemTab === 'Linha do Tempo' ? 'var(--bg3)' : 'transparent', padding: activeMemTab === 'Linha do Tempo' ? '12px' : '20px', margin: activeMemTab === 'Linha do Tempo' ? '8px' : '0', borderRadius: activeMemTab === 'Linha do Tempo' ? 'var(--radius-sm)' : '0', boxShadow: activeMemTab === 'Linha do Tempo' ? '0 0 20px rgba(155, 127, 244, 0.6), 0 0 40px rgba(155, 127, 244, 0.3)' : 'none', transition: 'all 0.2s' }}>
+          <section className="bottom-sec" id="linha-do-tempo" ref={timelineSectionRef} style={{ background: activeMemTab === 'Linha do Tempo' ? 'var(--bg3)' : 'transparent', padding: activeMemTab === 'Linha do Tempo' ? '12px' : '20px', margin: activeMemTab === 'Linha do Tempo' ? '8px' : '0', borderRadius: activeMemTab === 'Linha do Tempo' ? 'var(--radius-sm)' : '0', boxShadow: activeMemTab === 'Linha do Tempo' ? '0 0 20px rgba(155, 127, 244, 0.6), 0 0 40px rgba(155, 127, 244, 0.3)' : 'none', transition: 'all 0.2s' }}>
             <div className="sec-header">
               <div className="sec-title" style={{ fontSize: '14px' }}>Linha do tempo</div>
             </div>
             <div className="timeline timeline--trail">
               {timelineSteps.map((step, index) => (
                 <div className="tl-item tl-item--trail" key={step.day}>
-                  <div className={`tl-dot ${index === timelineSteps.length - 1 ? 'rip' : ''}`}>{step.icon}</div>
-                  <div>
+                  <div className={`tl-dot ${index === timelineSteps.length - 1 ? 'rip' : ''}`} aria-hidden="true">
+                    {step.icon}
+                  </div>
+                  <div className="tl-card">
                     <div className="tl-day">{step.day}</div>
                     <div className="tl-text">{step.text}</div>
                   </div>
@@ -1420,7 +1441,7 @@ export default function App() {
             <div className="relics-grid relics-grid--found">
               {selectedIdeaRelics.slice(0, 4).map((relic, index) => (
                 <div className="relic-item relic-item--found" key={relic.name}>
-                  <div className="relic-icon">{relic.icon}</div>
+                  <div className="relic-icon" aria-hidden="true">{relic.icon}</div>
                   <div>
                     <div className="relic-evidence">Evidencia {index + 1}</div>
                     <div className="relic-name">{relic.name}</div>
@@ -1563,7 +1584,17 @@ export default function App() {
           onClose={closeModal}
           title={MODAL_CONTENTS.about.title}
         >
-          {MODAL_CONTENTS.about.content}
+          <div className="guided-tour-modal">
+            <p>
+              O Museu das Ideias Abandonadas preserva projetos, cursos, startups,
+              hobbies e promessas pessoais que nao resistiram ao contato com a rotina.
+            </p>
+            <p>
+              Aqui, cada ideia recebe uma causa da morte, uma chance de sobrevivencia
+              e um lugar digno no acervo. A Curadoria acrescenta apenas o sarcasmo
+              necessario para que a memoria nao fique sem moldura.
+            </p>
+          </div>
         </MuseumModal>
       )}
 
@@ -1628,25 +1659,25 @@ export default function App() {
         <MuseumModal
           isOpen={true}
           onClose={closeModal}
-          title="Mural da Comunidade"
+          title="Comunidade do Museu"
           hideFooter
         >
-          <div className="collection-modal-list">
+          <div className="guided-tour-modal">
             <div className="collection-modal-item collection-modal-item--with-icon">
               <div className="collection-modal-icon" aria-hidden="true">{'\u{1F465}'}</div>
               <div>
-                <span>Visitantes</span>
-                <strong>Comunidade em observacao</strong>
-                <em>O mural publico ainda esta sendo catalogado. Por enquanto, a Curadoria registra sua presenca com um aceno solene.</em>
+                <span>Ala em restauracao</span>
+                <strong>A comunidade ainda esta sendo preparada</strong>
+                <em>
+                  A ala comunitaria ainda esta em restauracao. Em breve, visitantes poderao compartilhar memoriais,
+                  votar em reliquias e testemunhar publicamente contra suas proprias promessas antigas.
+                </em>
               </div>
             </div>
-            <div className="collection-modal-item collection-modal-item--with-icon">
-              <div className="collection-modal-icon" aria-hidden="true">{'\u{1F56F}\uFE0F'}</div>
-              <div>
-                <span>Ritual coletivo</span>
-                <strong>Homenagens recentes</strong>
-                <em>Use o memorial para acender velinhas, alternar reliquias e preservar o potencial desperdicado com dignidade teatral.</em>
-              </div>
+            <div className="lifecycle-modal-actions">
+              <button className="btn-primary" type="button" onClick={closeModal}>
+                Entendido pela Curadoria
+              </button>
             </div>
           </div>
         </MuseumModal>
