@@ -51,11 +51,28 @@ const PORT = process.env.PORT || 3001;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const frontendPath = path.join(__dirname, "../../frontend/dist");
+const allowedOrigins = new Set(
+  [
+    process.env.FRONTEND_URL,
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+  ].filter(Boolean)
+);
 
 // ─── Middlewares globais ──────────────────────────────────────────────────────
 
 app.use(helmet());                                           // headers de segurança HTTP
-app.use(cors({ origin: process.env.FRONTEND_URL }));         // CORS restrito à origem do frontend
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.has(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`Origem não permitida pelo CORS: ${origin}`));
+    },
+  })
+);                                                          // CORS para as origens locais do frontend
 app.use(express.json({ limit: "20kb" }));                    // body JSON com limite de tamanho
 app.use(requestLogger);                                      // log estruturado de cada requisição
 app.use("/api", apiLimiter);                                 // rate limit geral para toda a API

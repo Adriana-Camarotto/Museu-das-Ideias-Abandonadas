@@ -426,7 +426,11 @@ class IdeaService {
         }
       }
 
-      await this.registerEvent(ideaId, userId, eventType, 1);
+      try {
+        await this.registerEvent(ideaId, userId, eventType, 1);
+      } catch (eventError) {
+        console.warn(`Evento da ideia nao registrado (${eventError.message}). Contador principal preservado.`);
+      }
 
       console.log(`🎉 Homenagem adicionada: ${updatedIdea.honor_count} homenagens`);
       return {

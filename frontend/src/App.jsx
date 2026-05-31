@@ -1,12 +1,22 @@
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import MuseumModal from './components/MuseumModal';
 import { MODAL_CONTENTS } from './components/ModalContent';
 import IdeaForm from './components/IdeaForm';
 import FormModal from './components/FormModal';
+import AuthScreen from './components/AuthScreen';
 import { subscribeToAlerts } from './services/ideaService';
+import { authService } from './services/authService';
 
 export default function App() {
+  const [authUser, setAuthUser] = useState(() => authService.getStoredUser());
+  const [authMode, setAuthMode] = useState('login');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authName, setAuthName] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState(null);
+
   const [activeModal, setActiveModal] = useState(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -28,6 +38,29 @@ export default function App() {
   const rankingSectionRef = useRef(null);
   const achievementSectionRef = useRef(null);
   const timelineSectionRef = useRef(null);
+
+  useEffect(() => {
+    let active = true;
+
+    (async () => {
+      const syncedUser = await authService.syncSupabaseSession();
+      if (!active) return;
+
+      if (syncedUser) {
+        setAuthUser(syncedUser);
+        return;
+      }
+
+      const storedUser = authService.getStoredUser();
+      if (storedUser) {
+        setAuthUser(storedUser);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const museumCards = [
     { icon: '🕯️', name: 'Loja de Velas Aromáticas', dates: '2022 – 2022', cause: 'Pesquisa excessiva no Pinterest' },
@@ -65,6 +98,72 @@ export default function App() {
     };
 
     sectionMap[section]?.();
+  };
+
+  const handleAuthSubmit = async (event) => {
+    event.preventDefault();
+    setAuthLoading(true);
+    setAuthError(null);
+
+    try {
+      const credentials = {
+        email: authEmail.trim(),
+        password: authPassword,
+      };
+
+      if (authMode === 'signup' && authName.trim()) {
+        credentials.name = authName.trim();
+      }
+
+      const session = authMode === 'signup'
+        ? await authService.signup(credentials)
+        : await authService.login(credentials);
+
+      const user = session?.user || authService.getStoredUser();
+      if (session?.token && user) {
+        authService.setToken(session.token);
+        authService.setUser(user);
+        setAuthUser(user);
+        return;
+      }
+
+      if (user) {
+        setAuthUser(user);
+        return;
+      }
+
+      if (session?.needsEmailConfirmation) {
+        setAuthError('Credencial criada. Verifique seu e-mail para concluir o acesso.');
+        return;
+      }
+
+      throw new Error('Os portões recusaram sua entrada. Verifique os dados e tente novamente.');
+    } catch (error) {
+      setAuthError(error.message || 'Os portões recusaram sua entrada. Verifique os dados e tente novamente.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setAuthLoading(true);
+    setAuthError(null);
+
+    try {
+      await authService.loginWithGoogle();
+    } catch (error) {
+      setAuthError(error.message || 'Nao foi possivel iniciar o login com Google.');
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setAuthUser(null);
+    setAuthEmail('');
+    setAuthPassword('');
+    setAuthName('');
+    setAuthMode('login');
   };
 
   const closeModal = () => {
@@ -113,6 +212,25 @@ export default function App() {
     }
   };
 
+  if (!authUser) {
+    return (
+      <AuthScreen
+        authMode={authMode}
+        setAuthMode={setAuthMode}
+        authEmail={authEmail}
+        setAuthEmail={setAuthEmail}
+        authPassword={authPassword}
+        setAuthPassword={setAuthPassword}
+        authName={authName}
+        setAuthName={setAuthName}
+        authLoading={authLoading}
+        authError={authError}
+        onSubmit={handleAuthSubmit}
+        onGoogleLogin={handleGoogleLogin}
+      />
+    );
+  }
+
   return (
     <div>
       <Sidebar onNavigate={handleNavigate} />
@@ -126,6 +244,9 @@ export default function App() {
             <button className="notif-btn" type="button" aria-label="Notificações">
               🔔
               <div className="notif-dot"></div>
+            </button>
+            <button className="btn-outline" type="button" onClick={handleLogout} style={{ padding: '8px 12px' }}>
+              Sair
             </button>
           </div>
         </header>

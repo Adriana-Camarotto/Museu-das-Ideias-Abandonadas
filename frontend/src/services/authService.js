@@ -1,76 +1,159 @@
-/**
- * Serviço de Autenticação
- * Gerencia tokens JWT para requisições autenticadas
- */
+import { API_ENDPOINTS } from '../config/api';
+import supabase from './supabaseClient';
 
-// Em desenvolvimento, usamos um token fake
-// Em produção, isso viria do Supabase Auth
-const DEV_TOKEN = 'dev-token-' + Date.now();
+const TOKEN_KEY = 'auth_token';
+const USER_KEY = 'auth_user';
 
 export const authService = {
-  /**
-   * Obter token de autenticação
-   * Em desenvolvimento, retorna token fake
-   * Em produção, retorna token do Supabase
-   */
   getToken() {
-    // Verificar se há token no localStorage (de login real)
-    const storedToken = localStorage.getItem('auth_token');
-    if (storedToken) {
-      return storedToken;
-    }
-
-    // Em desenvolvimento, usar token fake
-    if (process.env.NODE_ENV === 'development') {
-      return DEV_TOKEN;
-    }
-
-    return null;
+    return localStorage.getItem(TOKEN_KEY);
   },
 
-  /**
-   * Obter headers com autenticação
-   */
+  getStoredUser() {
+    const storedUser = localStorage.getItem(USER_KEY);
+    if (!storedUser) return null;
+
+    try {
+      return JSON.parse(storedUser);
+    } catch {
+      localStorage.removeItem(USER_KEY);
+      return null;
+    }
+  },
+
   getAuthHeaders() {
     const token = this.getToken();
+
     return {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
   },
 
-  /**
-   * Fazer requisição autenticada
-   */
   async fetchWithAuth(url, options = {}) {
-    const headers = this.getAuthHeaders();
     const response = await fetch(url, {
       ...options,
       headers: {
-        ...headers,
+        ...this.getAuthHeaders(),
         ...options.headers,
       },
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || `HTTP ${response.status}`);
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok || payload.success === false) {
+      throw new Error(payload.error || `HTTP ${response.status}`);
     }
 
-    return response.json();
+    return payload;
   },
 
-  /**
-   * Armazenar token (para login real)
-   */
+  async authenticate(mode, credentials) {
+    const endpoint = mode === 'signup' ? API_ENDPOINTS.signup : API_ENDPOINTS.login;
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok || payload.success === false) {
+      throw new Error(payload.error || 'Nao foi possivel autenticar');
+    }
+
+    const session = payload.data;
+    if (!session?.token) {
+      return session;
+    }
+
+    this.setToken(session.token);
+
+    if (session.user) {
+      this.setUser(session.user);
+    }
+
+    return session;
+  },
+
+  async loginWithGoogle() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Nao foi possivel iniciar login com Google');
+    }
+
+    return true;
+  },
+
+  async syncSupabaseSession() {
+    const { data, error } = await supabase.auth.getSession();
+
+    if (error) {
+      console.error('[Supabase] Erro ao sincronizar sessao:', error.message);
+      return null;
+    }
+
+    const session = data?.session;
+    if (!session?.access_token) {
+      return null;
+    }
+
+    this.setToken(session.access_token);
+
+    const user = session.user
+      ? {
+          id: session.user.id,
+          email: session.user.email,
+          provider: 'supabase',
+        }
+      : null;
+
+    if (user) {
+      this.setUser(user);
+    }
+
+    return user;
+  },
+
+  login(credentials) {
+    return this.authenticate('login', credentials);
+  },
+
+  signup(credentials) {
+    return this.authenticate('signup', credentials);
+  },
+
+  async me() {
+    const payload = await this.fetchWithAuth(API_ENDPOINTS.me);
+    return payload.data?.user || null;
+  },
+
   setToken(token) {
-    localStorage.setItem('auth_token', token);
+    localStorage.setItem(TOKEN_KEY, token);
   },
 
-  /**
-   * Limpar token (logout)
-   */
+  setUser(user) {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  },
+
   clearToken() {
-    localStorage.removeItem('auth_token');
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+
+    if (supabase?.auth?.signOut) {
+      supabase.auth.signOut().catch((error) => {
+        console.error('[Supabase] Erro ao fazer signOut:', error?.message || error);
+      });
+    }
+  },
+
+  logout() {
+    this.clearToken();
   },
 };

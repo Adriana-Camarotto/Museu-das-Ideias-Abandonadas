@@ -28,6 +28,22 @@ create unique index if not exists ideas_user_hash_active_idx
 create index if not exists ideas_user_status_created_idx
   on public.ideas (user_id, status, created_at desc);
 
+create table if not exists public.idea_events (
+  id uuid primary key default gen_random_uuid(),
+  idea_id uuid not null references public.ideas(id) on delete cascade,
+  user_id text,
+  type text not null,
+  points integer not null default 0,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idea_events_idea_created_idx
+  on public.idea_events (idea_id, created_at desc);
+
+create index if not exists idea_events_user_created_idx
+  on public.idea_events (user_id, created_at desc);
+
 create or replace function public.set_updated_at()
 returns trigger as $$
 begin
