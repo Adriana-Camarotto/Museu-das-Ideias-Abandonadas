@@ -1,4 +1,5 @@
 import './AuthScreen.css';
+import MuseumAtmosphere from './MuseumAtmosphere';
 
 export default function AuthScreen({
   authMode,
@@ -22,15 +23,20 @@ export default function AuthScreen({
 
   return (
     <main className="auth-screen">
-      <div className="auth-orb auth-orb-one" />
-      <div className="auth-orb auth-orb-two" />
-      <div className="auth-dust" />
+      <div className="auth-museum-backdrop" />
+      <MuseumAtmosphere variant="login" />
+      <div className="auth-candles auth-candles-left" aria-hidden="true">
+        <span /><span /><span />
+      </div>
+      <div className="auth-candles auth-candles-right" aria-hidden="true">
+        <span /><span /><span /><span />
+      </div>
 
       <section className="auth-gate" aria-label="Autenticacao do Museu">
-        <div className="auth-kicker">Credencial noturna</div>
-        <h1>Entrada Restrita ao Museu</h1>
+        <div className="auth-kicker">Portaria oficial</div>
+        <h1>Bem-vindo ao Museu das Ideias Abandonadas.</h1>
         <p className="auth-copy">
-          Antes de visitar o acervo das ideias abandonadas, precisamos saber quem ousa retornar.
+          Preservando promessas desde o primeiro "agora vai".
         </p>
 
         <div className="auth-mode-switch" aria-label="Alternar modo de autenticacao">
@@ -104,7 +110,7 @@ export default function AuthScreen({
             {authLoading
               ? 'Consultando os arquivos esquecidos...'
               : isSignup
-                ? 'Criar credencial'
+                ? 'Registrar credencial'
                 : 'Abrir os portões'}
           </button>
         </form>

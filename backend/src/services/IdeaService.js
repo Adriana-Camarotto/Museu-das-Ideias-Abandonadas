@@ -45,11 +45,46 @@ class IdeaService {
     );
   }
 
+  isMissingLifecycleColumn(error) {
+    const message = String(error?.message || '').toLowerCase();
+    return (
+      error?.code === 'PGRST204' ||
+      message.includes('revival_attempts') ||
+      message.includes('last_revived_at') ||
+      message.includes('died_again_at') ||
+      message.includes('death_count') ||
+      message.includes('last_death_reason') ||
+      (message.includes('schema cache') && message.includes('column'))
+    );
+  }
+
+  isMissingSeedColumn(error) {
+    const message = String(error?.message || '').toLowerCase();
+    return (
+      this.isMissingLifecycleColumn(error) ||
+      message.includes('source') ||
+      message.includes('is_seed')
+    );
+  }
+
   fallbackToMemory(error) {
     if (!this.shouldFallbackToMemory(error)) return false;
     console.warn(`Supabase indisponivel/incompleto em desenvolvimento (${error.message}). Usando memoria.`);
     this.supabase = null;
     return true;
+  }
+
+  orderMuseumIdeas(ideas, userId = null) {
+    return [...ideas].sort((a, b) => {
+      const aUserIdea = userId && a.user_id === userId && !a.is_seed && a.source !== 'curadoria';
+      const bUserIdea = userId && b.user_id === userId && !b.is_seed && b.source !== 'curadoria';
+
+      if (aUserIdea !== bUserIdea) return aUserIdea ? -1 : 1;
+
+      const aDate = new Date(a.created_at || 0).getTime();
+      const bDate = new Date(b.created_at || 0).getTime();
+      return bDate - aDate;
+    });
   }
 
   /**
@@ -81,7 +116,7 @@ class IdeaService {
           .from('ideas')
           .select('*')
           .eq('idea_hash', ideaHash)
-          .eq('status', 'active');
+          .in('status', ['active', 'abandoned', 'reviving', 'dead_again']);
 
         // Se userId fornecido, filtrar por usuário
         if (userId) {
@@ -104,7 +139,10 @@ class IdeaService {
       } else {
         // Fallback em memória
         for (const idea of this.ideasMemory.values()) {
-          if (idea.idea_hash === ideaHash && idea.status === 'active') {
+          if (
+            idea.idea_hash === ideaHash &&
+            ['active', 'abandoned', 'reviving', 'dead_again'].includes(idea.status)
+          ) {
             if (!userId || idea.user_id === userId) {
               console.log(`✅ Ideia duplicada encontrada (memória): ${idea.id}`);
               return idea;
@@ -182,7 +220,7 @@ class IdeaService {
         cause_of_death_summary: analysis.cause_of_death_summary,
         ai_verdict: analysis.ai_verdict,
         honor_count: 0,
-        status: 'active',
+        status: 'abandoned',
         user_id: userId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -217,6 +255,85 @@ class IdeaService {
       }
       throw error;
     }
+  }
+
+  async seedCuratorIdeas(seedIdeas, { userId = 'curadoria' } = {}) {
+    let inserted = 0;
+    let skipped = 0;
+
+    for (const seedIdea of seedIdeas) {
+      const ideaHash = this.generateIdeaHash(seedIdea.nome, seedIdea.motivo);
+      const existingIdea = await this.findIdeaByHash(ideaHash, userId);
+
+      if (existingIdea) {
+        skipped += 1;
+        continue;
+      }
+
+      const newIdea = {
+        idea_hash: ideaHash,
+        nome: seedIdea.nome,
+        categoria: seedIdea.categoria,
+        empolgacao: seedIdea.empolgacao,
+        motivo: seedIdea.motivo,
+        survival_percentage: seedIdea.survival_percentage,
+        cause_of_death_summary: seedIdea.cause_of_death_summary,
+        ai_verdict: seedIdea.ai_verdict,
+        honor_count: 0,
+        status: 'abandoned',
+        user_id: userId,
+        revival_attempts: 0,
+        last_revived_at: null,
+        died_again_at: null,
+        death_count: 1,
+        last_death_reason: '',
+        source: 'curadoria',
+        is_seed: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      if (this.supabase) {
+        try {
+          const { error } = await this.supabase
+            .from('ideas')
+            .insert([newIdea]);
+
+          if (error) throw error;
+        } catch (error) {
+          if (!this.isMissingSeedColumn(error)) {
+            throw error;
+          }
+
+          console.warn(
+            'Colunas de seed/lifecycle ausentes. Inserindo seed com campos basicos; rode backend/sql/20260531_idea_lifecycle.sql para metadados completos.',
+          );
+          const {
+            revival_attempts,
+            last_revived_at,
+            died_again_at,
+            death_count,
+            last_death_reason,
+            source,
+            is_seed,
+            ...basicIdea
+          } = newIdea;
+
+          const { error: basicError } = await this.supabase
+            .from('ideas')
+            .insert([basicIdea]);
+
+          if (basicError) throw basicError;
+        }
+      } else {
+        const id = crypto.randomUUID();
+        this.ideasMemory.set(id, { ...newIdea, id });
+      }
+
+      inserted += 1;
+    }
+
+    return { inserted, skipped };
   }
 
   /**
@@ -278,6 +395,7 @@ class IdeaService {
       const {
         status = 'active',
         userId = null,
+        curatorUserId = null,
         limit = 50,
         offset = 0,
       } = options;
@@ -288,12 +406,18 @@ class IdeaService {
           .select('*', { count: 'exact' });
 
         // Filtrar por status
-        if (status !== 'all') {
+        if (status === 'active') {
+          query = query.in('status', ['active', 'abandoned', 'reviving', 'dead_again']);
+        } else if (status !== 'all') {
           query = query.eq('status', status);
         }
 
         // Filtrar por usuário (segurança)
-        if (userId) {
+        if (userId && curatorUserId) {
+          query = query.or(
+            `user_id.eq.${userId},and(user_id.eq.${curatorUserId},is_seed.eq.true),and(source.eq.curadoria,is_seed.eq.true)`
+          );
+        } else if (userId) {
           query = query.eq('user_id', userId);
         }
 
@@ -309,9 +433,11 @@ class IdeaService {
           throw error;
         }
 
-        console.log(`✅ ${data.length} ideias listadas (total: ${count})`);
+        const orderedIdeas = this.orderMuseumIdeas(data, userId);
+
+        console.log(`✅ ${orderedIdeas.length} ideias listadas (total: ${count})`);
         return {
-          ideas: data,
+          ideas: orderedIdeas,
           total: count,
           limit,
           offset,
@@ -321,17 +447,25 @@ class IdeaService {
         let ideas = Array.from(this.ideasMemory.values());
 
         // Filtrar por status
-        if (status !== 'all') {
+        if (status === 'active') {
+          ideas = ideas.filter(idea => ['active', 'abandoned', 'reviving', 'dead_again'].includes(idea.status));
+        } else if (status !== 'all') {
           ideas = ideas.filter(idea => idea.status === status);
         }
 
         // Filtrar por usuário
-        if (userId) {
+        if (userId && curatorUserId) {
+          ideas = ideas.filter(idea => (
+            idea.user_id === userId ||
+            (idea.user_id === curatorUserId && idea.is_seed) ||
+            (idea.source === 'curadoria' && idea.is_seed)
+          ));
+        } else if (userId) {
           ideas = ideas.filter(idea => idea.user_id === userId);
         }
 
         // Ordenar
-        ideas.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        ideas = this.orderMuseumIdeas(ideas, userId);
 
         // Paginação
         const total = ideas.length;
@@ -502,6 +636,88 @@ class IdeaService {
    * @param {string} userId - ID do usuário (para validação)
    * @returns {Promise<Object>} Ideia arquivada
    */
+  async reviveIdea(ideaId, userId = null) {
+    try {
+      const idea = await this.getIdea(ideaId, userId);
+      if (!idea) {
+        throw new Error('Ideia nao encontrada ou acesso negado');
+      }
+
+      const updates = {
+        status: 'reviving',
+        revival_attempts: Number(idea.revival_attempts || 0) + 1,
+        last_revived_at: new Date().toISOString(),
+      };
+
+      let updatedIdea;
+      try {
+        updatedIdea = await this.updateIdea(ideaId, updates, userId);
+      } catch (error) {
+        if (!this.isMissingLifecycleColumn(error)) {
+          throw error;
+        }
+
+        console.warn('Colunas de historico de ressurreicao ausentes. Persistindo apenas status.');
+        updatedIdea = await this.updateIdea(ideaId, { status: updates.status }, userId);
+      }
+
+      try {
+        await this.registerEvent(ideaId, userId, 'revive', 3, {
+          revival_attempts: updates.revival_attempts,
+        });
+      } catch (eventError) {
+        console.warn(`Evento de ressurreicao nao registrado (${eventError.message}).`);
+      }
+
+      return updatedIdea;
+    } catch (error) {
+      console.error('Erro ao registrar tentativa de ressurreicao:', error.message);
+      throw error;
+    }
+  }
+
+  async markDeadAgain(ideaId, userId = null, { reason = '' } = {}) {
+    try {
+      const idea = await this.getIdea(ideaId, userId);
+      if (!idea) {
+        throw new Error('Ideia nao encontrada ou acesso negado');
+      }
+
+      const updates = {
+        status: 'dead_again',
+        death_count: Number(idea.death_count || 0) + 1,
+        died_again_at: new Date().toISOString(),
+        last_death_reason: String(reason || '').trim(),
+      };
+
+      let updatedIdea;
+      try {
+        updatedIdea = await this.updateIdea(ideaId, updates, userId);
+      } catch (error) {
+        if (!this.isMissingLifecycleColumn(error)) {
+          throw error;
+        }
+
+        console.warn('Colunas de historico de nova morte ausentes. Persistindo apenas status.');
+        updatedIdea = await this.updateIdea(ideaId, { status: updates.status }, userId);
+      }
+
+      try {
+        await this.registerEvent(ideaId, userId, 'die_again', 2, {
+          death_count: updates.death_count,
+          reason: updates.last_death_reason,
+        });
+      } catch (eventError) {
+        console.warn(`Evento de nova morte nao registrado (${eventError.message}).`);
+      }
+
+      return updatedIdea;
+    } catch (error) {
+      console.error('Erro ao registrar nova morte:', error.message);
+      throw error;
+    }
+  }
+
   async archiveIdea(ideaId, userId = null) {
     try {
       // Validação de segurança
@@ -675,7 +891,7 @@ class IdeaService {
 
         const stats = {
           total: count,
-          active: data.filter(i => i.status === 'active').length,
+          active: data.filter(i => ['active', 'abandoned', 'reviving', 'dead_again'].includes(i.status)).length,
           archived: data.filter(i => i.status === 'archived').length,
           totalHonors: data.reduce((sum, i) => sum + (i.honor_count || 0), 0),
           averageSurvival: data.length > 0
@@ -692,7 +908,7 @@ class IdeaService {
 
         const stats = {
           total: filtered.length,
-          active: filtered.filter(i => i.status === 'active').length,
+          active: filtered.filter(i => ['active', 'abandoned', 'reviving', 'dead_again'].includes(i.status)).length,
           archived: filtered.filter(i => i.status === 'archived').length,
           totalHonors: filtered.reduce((sum, i) => sum + (i.honor_count || 0), 0),
           averageSurvival: filtered.length > 0

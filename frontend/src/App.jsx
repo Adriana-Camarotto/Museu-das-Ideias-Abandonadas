@@ -5,8 +5,105 @@ import { MODAL_CONTENTS } from './components/ModalContent';
 import IdeaForm from './components/IdeaForm';
 import FormModal from './components/FormModal';
 import AuthScreen from './components/AuthScreen';
-import { subscribeToAlerts } from './services/ideaService';
+import MuseumAtmosphere from './components/MuseumAtmosphere';
+import { seedIdeas } from './data/seedIdeas';
+import { listIdeas, markIdeaDeadAgain, reviveIdea, subscribeToAlerts } from './services/ideaService';
 import { authService } from './services/authService';
+import { createCuratorNarration, narrateCuratorText, playMuseumCue } from './services/museumAudio';
+
+const IDEA_LIFECYCLE_STORAGE_KEY = 'museum-idea-lifecycle-v1';
+
+function readStoredIdeaLifecycle() {
+  if (typeof window === 'undefined') return {};
+
+  try {
+    return JSON.parse(window.localStorage.getItem(IDEA_LIFECYCLE_STORAGE_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+const DEFAULT_IDEA_LIFECYCLE = {
+  status: 'abandoned',
+  revival_attempts: 0,
+  last_revived_at: null,
+  died_again_at: null,
+  death_count: 0,
+  last_death_reason: '',
+};
+
+function normalizeIdeaStatus(status) {
+  if (status === 'reviving' || status === 'dead_again' || status === 'abandoned') {
+    return status;
+  }
+
+  return 'abandoned';
+}
+
+function getCategoryIcon(category = '') {
+  const normalized = category.toLowerCase();
+
+  if (normalized.includes('startup') || normalized.includes('empreendedor')) return '🚀';
+  if (normalized.includes('curso') || normalized.includes('estudo')) return '📚';
+  if (normalized.includes('fitness') || normalized.includes('academia')) return '💪';
+  if (normalized.includes('livro') || normalized.includes('blog')) return '📖';
+  if (normalized.includes('podcast')) return '🎙️';
+  if (normalized.includes('app') || normalized.includes('saas')) return '💻';
+  if (normalized.includes('jogo')) return '🎮';
+  if (normalized.includes('e-commerce')) return '🛒';
+
+  return '🕯️';
+}
+
+function adaptIdeaToCard(idea) {
+  const createdAt = idea.created_at ? new Date(idea.created_at) : new Date();
+  const year = Number.isNaN(createdAt.getFullYear()) ? new Date().getFullYear() : createdAt.getFullYear();
+  const name = idea.nome || idea.name || 'Ideia sem placa';
+  const category = idea.categoria || idea.category || 'Outros';
+  const status = normalizeIdeaStatus(idea.status);
+  const isSeed = Boolean(idea.is_seed || idea.isSeed);
+  const isFallbackSeed = idea.source === 'fallback' || (isSeed && String(idea.id || '').startsWith('seed-'));
+  const source = isFallbackSeed
+    ? 'fallback'
+    : idea.source || (isSeed ? 'curadoria' : 'usuario');
+
+  return {
+    ...idea,
+    id: idea.id,
+    source,
+    isSeed,
+    icon: idea.icon || getCategoryIcon(category),
+    name,
+    category,
+    dates: idea.dates || `${year} - ${year}`,
+    cause: idea.cause || idea.cause_of_death_summary || idea.motivo || 'Causa ainda sob analise da curadoria',
+    status,
+    revival_attempts: Number(idea.revival_attempts || 0),
+    last_revived_at: idea.last_revived_at || null,
+    died_again_at: idea.died_again_at || null,
+    death_count: Number(idea.death_count || 0),
+    last_death_reason: idea.last_death_reason || '',
+  };
+}
+
+function sortMuseumCards(cards) {
+  return [...cards].sort((a, b) => {
+    const aCurator = a.source === 'curadoria' || a.source === 'fallback' || a.isSeed;
+    const bCurator = b.source === 'curadoria' || b.source === 'fallback' || b.isSeed;
+
+    if (aCurator !== bCurator) return aCurator ? 1 : -1;
+
+    const aDate = new Date(a.created_at || 0).getTime();
+    const bDate = new Date(b.created_at || 0).getTime();
+    return bDate - aDate;
+  });
+}
+
+function getOriginBadge(card) {
+  if (card.source === 'fallback') return 'Acervo demonstrativo';
+  if (card.source === 'curadoria' || card.isSeed) return 'Acervo da Curadoria';
+  return 'Reliquia registrada';
+}
 
 export default function App() {
   const [authUser, setAuthUser] = useState(() => authService.getStoredUser());
@@ -28,8 +125,17 @@ export default function App() {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterFeedback, setNewsletterFeedback] = useState(null);
   const [newsletterLoading, setNewsletterLoading] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState(null);
   const [selectedCandleIdea, setSelectedCandleIdea] = useState('Loja de Velas Aromáticas');
   const [candleCount, setCandleCount] = useState({});
+  const [realIdeaCards, setRealIdeaCards] = useState([]);
+  const [ideasLoading, setIdeasLoading] = useState(false);
+  const [ideasError, setIdeasError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [ideaLifecycle, setIdeaLifecycle] = useState(readStoredIdeaLifecycle);
+  const [lifecycleModal, setLifecycleModal] = useState(null);
+  const [activeLifecycleIdeaName, setActiveLifecycleIdeaName] = useState(null);
+  const [newDeathReason, setNewDeathReason] = useState('');
 
   const mainRef = useRef(null);
   const museumSectionRef = useRef(null);
@@ -62,17 +168,81 @@ export default function App() {
     };
   }, []);
 
-  const museumCards = [
-    { icon: '🕯️', name: 'Loja de Velas Aromáticas', dates: '2022 – 2022', cause: 'Pesquisa excessiva no Pinterest' },
-    { icon: '🎬', name: 'Canal de Produtividade', dates: '2023 – 2023', cause: 'Editou o primeiro vídeo e desistiu' },
-    { icon: '🇩🇪', name: 'Curso de Alemão B1', dates: '2021 – 2021', cause: 'Duolingo burnout' },
-    { icon: '💪', name: 'Projeto Fitness', dates: '2022 – 2023', cause: 'Encontrou pão de alho' },
-    { icon: '🎙️', name: 'Podcast sobre Mindset', dates: '2023 – 2023', cause: 'Ninguém ouviu o episódio 1' },
-    { icon: '🎨', name: 'Aprender Aquarela', dates: '2022 – 2022', cause: 'Fase existencial' },
-    { icon: '🦄', name: 'Startup Inovadora', dates: '2024 – 2024', cause: 'Pitch pro espelho' }
-  ];
+  useEffect(() => {
+    window.localStorage.setItem(IDEA_LIFECYCLE_STORAGE_KEY, JSON.stringify(ideaLifecycle));
+  }, [ideaLifecycle]);
+
+  useEffect(() => {
+    if (!actionFeedback) return undefined;
+
+    const timer = window.setTimeout(() => {
+      setActionFeedback(null);
+    }, 3600);
+
+    return () => window.clearTimeout(timer);
+  }, [actionFeedback]);
+
 
   const filters = ['Todas', 'Empreendedorismo', 'Estudos', 'Fitness', 'Hobbies', 'Criativas', 'Organização', 'Outros'];
+  useEffect(() => {
+    if (!authUser) return undefined;
+
+    let active = true;
+
+    async function loadIdeas() {
+      try {
+        setIdeasLoading(true);
+        setIdeasError(null);
+        const response = await listIdeas({ status: 'active', limit: 100 });
+        if (!active) return;
+
+        const cards = sortMuseumCards((response.data || []).map(adaptIdeaToCard));
+        setRealIdeaCards(cards);
+
+        if (cards.length > 0) {
+          setSelectedCandleIdea((current) => (
+            cards.some((card) => card.name === current) ? current : cards[0].name
+          ));
+        }
+      } catch (error) {
+        if (active) {
+          setIdeasError(error.message || 'Nao foi possivel carregar o acervo real.');
+        }
+      } finally {
+        if (active) {
+          setIdeasLoading(false);
+        }
+      }
+    }
+
+    loadIdeas();
+
+    return () => {
+      active = false;
+    };
+  }, [authUser]);
+
+  const museumCards = realIdeaCards.length > 0
+    ? realIdeaCards
+    : seedIdeas.map(adaptIdeaToCard);
+
+  const allFilters = Array.from(new Set([
+    ...filters,
+    ...museumCards
+      .map((card) => card.category)
+      .filter((category) => category && !filters.includes(category)),
+  ]));
+
+  const visibleMuseumCards = museumCards.filter((card) => {
+    const matchesFilter = activeFilter === 'Todas' || card.category === activeFilter;
+    const query = searchTerm.trim().toLowerCase();
+    const matchesSearch = !query || [card.name, card.category, card.cause]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(query));
+
+    return matchesFilter && matchesSearch;
+  });
+
   const survivalPcts = [7, 13, 19, 31, 48];
   const survivalPct = survivalPcts[selectedMood] ?? 13;
 
@@ -171,15 +341,235 @@ export default function App() {
     setIsFormModalOpen(false);
   };
 
+  const closeLifecycleModal = () => {
+    setLifecycleModal(null);
+    setActiveLifecycleIdeaName(null);
+    setNewDeathReason('');
+  };
+
   const handleLightCandle = () => {
     setCandleCount(prev => ({
       ...prev,
       [selectedCandleIdea]: (prev[selectedCandleIdea] || 0) + 1
     }));
+    playMuseumCue('honor');
     setIsVideoModalOpen(true);
   };
 
   const selectedIdea = museumCards.find(card => card.name === selectedCandleIdea) || museumCards[0];
+
+  const getLifecycleRecord = (ideaName) => {
+    const card = museumCards.find((idea) => idea.name === ideaName);
+
+    if (card?.id && card?.source === 'usuario') {
+      return {
+        ...DEFAULT_IDEA_LIFECYCLE,
+        status: card.status,
+        revival_attempts: card.revival_attempts,
+        last_revived_at: card.last_revived_at,
+        died_again_at: card.died_again_at,
+        death_count: card.death_count,
+        last_death_reason: card.last_death_reason,
+      };
+    }
+
+    const seedLifecycle = card?.isSeed
+      ? {
+          status: card.status,
+          revival_attempts: card.revival_attempts,
+          last_revived_at: card.last_revived_at,
+          died_again_at: card.died_again_at,
+          death_count: card.death_count,
+          last_death_reason: card.last_death_reason,
+        }
+      : {};
+
+    return {
+      ...DEFAULT_IDEA_LIFECYCLE,
+      ...seedLifecycle,
+      ...(ideaLifecycle[ideaName] || {}),
+    };
+  };
+
+  const getLifecycleCopy = (status) => {
+    if (status === 'reviving') {
+      return {
+        badge: 'Em observacao',
+        note: 'A ideia saiu temporariamente da ala dos abandonados. A curadoria observa com cautela.',
+        button: 'Declarar Obito Novamente',
+      };
+    }
+
+    if (status === 'dead_again') {
+      return {
+        badge: 'Morreu novamente',
+        note: 'A ideia retornou ao museu com novas evidencias de inviabilidade emocional.',
+        button: 'Realizar Nova Tentativa',
+      };
+    }
+
+    return {
+      badge: 'Abandonada',
+      note: 'A curadoria informa que esta ideia ja conhece o caminho de volta para o museu.',
+      button: 'Realizar Nova Tentativa',
+    };
+  };
+
+  const openLifecycleModal = (card, event) => {
+    event.stopPropagation();
+    const { status } = getLifecycleRecord(card.name);
+    setActiveLifecycleIdeaName(card.name);
+    setLifecycleModal(status === 'reviving' ? 'death' : 'revive');
+    setNewDeathReason('');
+    playMuseumCue(status === 'reviving' ? 'modal' : 'revive');
+  };
+
+  const updateRealIdeaCard = (updatedIdea) => {
+    const adapted = adaptIdeaToCard(updatedIdea);
+    setRealIdeaCards((current) => (
+      current.map((card) => (card.id === adapted.id ? adapted : card))
+    ));
+    setSelectedCandleIdea(adapted.name);
+  };
+
+  const handleIdeaAdded = (idea) => {
+    const adapted = adaptIdeaToCard(idea);
+    setRealIdeaCards((current) => {
+      const withoutDuplicate = current.filter((card) => card.id !== adapted.id);
+      return [adapted, ...withoutDuplicate];
+    });
+    setSelectedCandleIdea(adapted.name);
+    setIsFormModalOpen(false);
+    museumSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const confirmRevivalAttempt = async () => {
+    const ideaName = activeLifecycleIdeaName;
+    if (!ideaName) return;
+
+    if (activeLifecycleIdea?.id && activeLifecycleIdea?.source === 'usuario') {
+      const updatedIdea = await reviveIdea(activeLifecycleIdea.id);
+      updateRealIdeaCard(updatedIdea);
+      playMuseumCue('revive');
+      closeLifecycleModal();
+      return;
+    }
+
+    setIdeaLifecycle((current) => {
+      const previous = { ...DEFAULT_IDEA_LIFECYCLE, ...(current[ideaName] || {}) };
+
+      return {
+        ...current,
+        [ideaName]: {
+          ...previous,
+          status: 'reviving',
+          revival_attempts: previous.revival_attempts + 1,
+          last_revived_at: new Date().toISOString(),
+        },
+      };
+    });
+
+    playMuseumCue('revive');
+    closeLifecycleModal();
+  };
+
+  const confirmDeathAgain = async () => {
+    const ideaName = activeLifecycleIdeaName;
+    if (!ideaName) return;
+
+    if (activeLifecycleIdea?.id && activeLifecycleIdea?.source === 'usuario') {
+      const updatedIdea = await markIdeaDeadAgain(activeLifecycleIdea.id, newDeathReason);
+      updateRealIdeaCard(updatedIdea);
+      playMuseumCue('honor');
+      closeLifecycleModal();
+      return;
+    }
+
+    setIdeaLifecycle((current) => {
+      const previous = { ...DEFAULT_IDEA_LIFECYCLE, ...(current[ideaName] || {}) };
+
+      return {
+        ...current,
+        [ideaName]: {
+          ...previous,
+          status: 'dead_again',
+          death_count: previous.death_count + 1,
+          died_again_at: new Date().toISOString(),
+          last_death_reason: newDeathReason.trim(),
+        },
+      };
+    });
+
+    playMuseumCue('honor');
+    closeLifecycleModal();
+  };
+
+  const activeLifecycleIdea = museumCards.find(card => card.name === activeLifecycleIdeaName);
+  const activeLifecycleRecord = activeLifecycleIdeaName
+    ? getLifecycleRecord(activeLifecycleIdeaName)
+    : DEFAULT_IDEA_LIFECYCLE;
+  const selectedLifecycleRecord = getLifecycleRecord(selectedIdea.name);
+  const selectedLifecycleCopy = getLifecycleCopy(selectedLifecycleRecord.status);
+
+  const getExhibitScene = (card) => {
+    if (card.name.includes('Startup')) return 'startup-desk';
+    if (card.name.includes('Curso')) return 'course-desk';
+    if (card.name.includes('Fitness')) return 'fitness-relic';
+    if (card.name.includes('Podcast')) return 'podcast-booth';
+    if (card.name.includes('Canal')) return 'content-studio';
+    if (card.name.includes('Aquarela')) return 'book-table';
+    return 'candle-shop';
+  };
+
+  const getCuratorNote = (card) => {
+    if (card.name.includes('Startup')) return 'Os registros indicam que o projeto morreu logo apos a criacao do logo.';
+    if (card.name.includes('Curso')) return 'Detectamos um caso de entusiasmo agudo seguido de fadiga gramatical.';
+    if (card.name.includes('Fitness')) return 'A disciplina resistiu bravamente ate encontrar vida social com carboidrato.';
+    if (card.name.includes('Podcast')) return 'Apos extensa investigacao, concluimos que o microfone ouviu mais do que o publico.';
+    if (card.name.includes('Canal')) return 'A Curadoria encontrou um roteiro, tres thumbnails e nenhum segundo episodio.';
+    if (card.name.includes('Aquarela')) return 'As evidencias mostram pigmentos, papel caro e uma serenidade que durou pouco.';
+    return 'Mais uma promessa preservada desde o primeiro agora vai.';
+  };
+
+  const handleShareMemorial = () => {
+    const narration = createCuratorNarration({
+      ...selectedIdea,
+      category: selectedIdea.name.includes('Startup') ? 'Startup' : selectedIdea.name.includes('Fitness') ? 'Fitness' : undefined
+    });
+    playMuseumCue('share');
+    narrateCuratorText(narration);
+  };
+
+  const announceCuratorAction = (message, type = 'info') => {
+    setActionFeedback({
+      id: Date.now(),
+      type,
+      message,
+    });
+  };
+
+  const openCollectionExpansion = ({ modal, tab, ref, message }) => {
+    setActiveMemTab(tab);
+    setActiveModal(modal);
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    playMuseumCue('modal');
+    announceCuratorAction(message);
+  };
+
+  const getNewsletterErrorMessage = (error) => {
+    const message = String(error?.message || '').toLowerCase();
+
+    if (
+      message.includes('smtp') ||
+      message.includes('e-mail') ||
+      message.includes('email') ||
+      message.includes('servidor')
+    ) {
+      return 'A Curadoria tentou enviar o aviso, mas o setor postal do museu ainda nao foi configurado.';
+    }
+
+    return 'Os alertas estao temporariamente em manutencao no acervo. A reliquia foi preservada, mas o mensageiro ainda nao recebeu credenciais.';
+  };
 
   const handleNewsletterSubscribe = async () => {
     const email = newsletterEmail.trim();
@@ -196,16 +586,16 @@ export default function App() {
     try {
       setNewsletterLoading(true);
       setNewsletterFeedback(null);
-      await subscribeToAlerts(email);
+      const result = await subscribeToAlerts(email);
       setNewsletterFeedback({
         type: 'success',
-        message: 'E-mail de confirmacao enviado. Verifique sua caixa de entrada.'
+        message: result?.message || 'E-mail de confirmacao enviado. Verifique sua caixa de entrada.'
       });
       setNewsletterEmail('');
     } catch (error) {
       setNewsletterFeedback({
         type: 'error',
-        message: error.message || 'Nao foi possivel enviar o e-mail de confirmacao.'
+        message: getNewsletterErrorMessage(error)
       });
     } finally {
       setNewsletterLoading(false);
@@ -236,6 +626,7 @@ export default function App() {
       <Sidebar onNavigate={handleNavigate} />
 
       <main className="main" ref={mainRef}>
+        <MuseumAtmosphere variant="page" />
         <header className="topbar">
           <div className="topbar-left">
             Museu das Ideias Abandonadas · Acervo vivo desde 2019
@@ -250,6 +641,12 @@ export default function App() {
             </button>
           </div>
         </header>
+
+        {actionFeedback && (
+          <div className={`curator-action-feedback curator-action-feedback--${actionFeedback.type}`}>
+            {actionFeedback.message}
+          </div>
+        )}
 
         <section className="hero">
           <div className="hero-statue">🗿</div>
@@ -283,11 +680,24 @@ export default function App() {
 
             <div className="search-bar">
               <span className="search-icon">🔍</span>
-              <input type="text" placeholder="Buscar uma ideia..." />
+              <input
+                type="text"
+                placeholder="Buscar uma ideia..."
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
             </div>
 
+            {ideasLoading && (
+              <div className="ideas-state">A curadoria esta abrindo os arquivos reais...</div>
+            )}
+
+            {ideasError && (
+              <div className="ideas-state ideas-state--error">{ideasError}</div>
+            )}
+
             <div className="filters">
-              {filters.map((filter) => (
+              {allFilters.map((filter) => (
                 <button
                   key={filter}
                   className={`filter-chip ${activeFilter === filter ? 'active' : ''}`}
@@ -300,8 +710,12 @@ export default function App() {
             </div>
 
             <div className="ideas-grid">
-              {museumCards.map((card) => (
-                <div className="idea-card" key={card.name} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => { setSelectedCandleIdea(card.name); memorialSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
+              {visibleMuseumCards.map((card) => {
+                const lifecycleRecord = getLifecycleRecord(card.name);
+                const lifecycleCopy = getLifecycleCopy(lifecycleRecord.status);
+
+                return (
+                <div className={`idea-card idea-card--${lifecycleRecord.status}`} key={card.id || card.name} style={{ position: 'relative', cursor: 'pointer' }} onMouseEnter={() => playMuseumCue('hover')} onClick={() => { setSelectedCandleIdea(card.name); memorialSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
                   {candleCount[card.name] > 0 && (
                     <div style={{ position: 'absolute', top: '8px', left: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 10 }}>
                       {candleCount[card.name] > 1 && (
@@ -312,8 +726,14 @@ export default function App() {
                       <div style={{ fontSize: '20px', filter: 'drop-shadow(0 0 4px rgba(255, 100, 100, 0.6))' }}>🕯️</div>
                     </div>
                   )}
+                  <div className={`idea-status-badge idea-status-badge--${lifecycleRecord.status}`}>
+                    {lifecycleCopy.badge}
+                  </div>
+                  <div className={`idea-origin-badge idea-origin-badge--${card.source}`}>
+                    {getOriginBadge(card)}
+                  </div>
                   <div
-                    className="idea-thumb"
+                    className={`idea-thumb exhibit-scene exhibit-scene--${getExhibitScene(card)}`}
                     style={{
                       background:
                         card.name === 'Loja de Velas Aromáticas'
@@ -331,7 +751,12 @@ export default function App() {
                                     : 'linear-gradient(135deg, #1e1a30, #282048)'
                     }}
                   >
-                    <span>{card.icon}</span>
+                    <div className="exhibit-stage" aria-hidden="true">
+                      <span className="exhibit-object exhibit-object--one" />
+                      <span className="exhibit-object exhibit-object--two" />
+                      <span className="exhibit-object exhibit-object--three" />
+                      <span className="exhibit-object exhibit-object--four" />
+                    </div>
                     <div className="idea-rip">🪦 RIP</div>
                   </div>
                   <div className="idea-body">
@@ -340,9 +765,19 @@ export default function App() {
                     <div className="idea-cause">
                       <strong>Causa da morte:</strong> {card.cause}
                     </div>
+                    <div className="curator-note">{getCuratorNote(card)}</div>
+                    <div className="idea-lifecycle-note">{lifecycleCopy.note}</div>
+                    <button
+                      className={`idea-lifecycle-btn idea-lifecycle-btn--${lifecycleRecord.status}`}
+                      type="button"
+                      onClick={(event) => openLifecycleModal(card, event)}
+                    >
+                      {lifecycleCopy.button}
+                    </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
 
             </div>
           </div>
@@ -432,6 +867,24 @@ export default function App() {
                 <div className="memorial-dates">{selectedIdea.dates}</div>
                 <div className="memorial-cause-label">Causa da morte</div>
                 <div className="memorial-cause-val">{selectedIdea.cause}</div>
+                <div className={`memorial-lifecycle-panel memorial-lifecycle-panel--${selectedLifecycleRecord.status}`}>
+                  <div>
+                    <div className="memorial-lifecycle-status">{selectedLifecycleCopy.badge}</div>
+                    <div className="memorial-lifecycle-copy">{selectedLifecycleCopy.note}</div>
+                    {(selectedLifecycleRecord.revival_attempts > 0 || selectedLifecycleRecord.death_count > 0) && (
+                      <div className="memorial-lifecycle-meta">
+                        Tentativas: {selectedLifecycleRecord.revival_attempts} - retornos ao acervo: {selectedLifecycleRecord.death_count}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    className={`idea-lifecycle-btn idea-lifecycle-btn--${selectedLifecycleRecord.status}`}
+                    type="button"
+                    onClick={(event) => openLifecycleModal(selectedIdea, event)}
+                  >
+                    {selectedLifecycleCopy.button}
+                  </button>
+                </div>
                 <div className="memorial-quote">"Só mais uma ideia que poderia ter mudado tudo."</div>
               </div>
             </div>
@@ -555,7 +1008,7 @@ export default function App() {
             </div>
           </section>
 
-          <section className="footer-widget">
+          <section className="footer-widget" onClick={handleShareMemorial}>
             <div className="footer-title">📱 Compartilhar memorial</div>
             <div className="footer-sub">Mostre para o mundo o seu potencial desperdiçado.</div>
             <button className="btn-primary" type="button" style={{ fontSize: '12px' }}>📩 Gerar card para compartilhar</button>
@@ -630,8 +1083,74 @@ export default function App() {
       )}
 
       <FormModal isOpen={isFormModalOpen} onClose={closeModal}>
-        <IdeaForm />
+        <IdeaForm onIdeaAdded={handleIdeaAdded} />
       </FormModal>
+
+      {lifecycleModal === 'revive' && activeLifecycleIdea && (
+        <MuseumModal
+          isOpen={true}
+          onClose={closeLifecycleModal}
+          title="Reabrir o Caso"
+          hideFooter
+        >
+          <div className="lifecycle-modal-copy">
+            <p>
+              A curadoria informa que esta ideia ja conhece o caminho de volta para o museu.
+              Deseja registrar uma nova tentativa mesmo assim?
+            </p>
+            <p>
+              A ideia sera liberada temporariamente da ala dos abandonados. A curadoria
+              acompanhara o caso de perto, sem criar expectativas desnecessarias.
+            </p>
+            {activeLifecycleRecord.revival_attempts > 0 && (
+              <p className="lifecycle-footnote">
+                Tentativas anteriores registradas: {activeLifecycleRecord.revival_attempts}.
+              </p>
+            )}
+          </div>
+          <div className="lifecycle-modal-actions">
+            <button className="btn-primary" type="button" onClick={confirmRevivalAttempt}>
+              Sim, tentar novamente
+            </button>
+            <button className="btn-outline" type="button" onClick={closeLifecycleModal}>
+              Melhor deixar repousar
+            </button>
+          </div>
+        </MuseumModal>
+      )}
+
+      {lifecycleModal === 'death' && activeLifecycleIdea && (
+        <MuseumModal
+          isOpen={true}
+          onClose={closeLifecycleModal}
+          title="Registrar Nova Morte"
+          hideFooter
+        >
+          <div className="lifecycle-modal-copy">
+            <p>
+              Aconteceu de novo. A curadoria solicita apenas um breve registro para fins
+              historicos.
+            </p>
+            <label className="lifecycle-death-field">
+              <span>Qual foi a causa desta nova morte?</span>
+              <textarea
+                value={newDeathReason}
+                onChange={(event) => setNewDeathReason(event.target.value)}
+                placeholder="Ex: entusiasmo durou menos que a reuniao de planejamento"
+                rows="4"
+              />
+            </label>
+          </div>
+          <div className="lifecycle-modal-actions">
+            <button className="btn-primary" type="button" onClick={confirmDeathAgain}>
+              Registrar nos arquivos
+            </button>
+            <button className="btn-outline" type="button" onClick={closeLifecycleModal}>
+              Cancelar autopsia
+            </button>
+          </div>
+        </MuseumModal>
+      )}
 
       {isVideoModalOpen && (
         <div
@@ -647,6 +1166,7 @@ export default function App() {
           }}
           onClick={() => setIsVideoModalOpen(false)}
         >
+          <MuseumAtmosphere variant="modal" />
           <div
             style={{
               background: 'var(--bg)',

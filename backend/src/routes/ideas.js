@@ -18,6 +18,7 @@ import logger from "../config/logger.js";
 
 const router = Router();
 const ideaService = getIdeaService();
+const CURATOR_USER_ID = process.env.CURATOR_USER_ID || "00000000-0000-4000-8000-000000000001";
 
 function getUserId(req) {
   return req.user?.id || process.env.DEV_USER_ID || "dev-user";
@@ -26,12 +27,21 @@ function getUserId(req) {
 function formatIdeaForFrontend(idea) {
   if (!idea) return null;
   const year = idea.created_at ? new Date(idea.created_at).getFullYear() : new Date().getFullYear();
+  const status = idea.status === "active" ? "abandoned" : idea.status;
 
   return {
     ...idea,
+    status,
     icon: idea.icon || "🕯️",
     dates: idea.dates || `${year} - ${year}`,
     cause: idea.cause || idea.cause_of_death_summary,
+    revival_attempts: idea.revival_attempts || 0,
+    last_revived_at: idea.last_revived_at || null,
+    died_again_at: idea.died_again_at || null,
+    death_count: idea.death_count || 0,
+    last_death_reason: idea.last_death_reason || "",
+    source: idea.source || "usuario",
+    is_seed: Boolean(idea.is_seed),
   };
 }
 
@@ -104,6 +114,7 @@ router.get("/ideas", optionalAuthMiddleware, requireAuth, async (req, res) => {
     const result = await ideaService.listIdeas({
       status,
       userId: getUserId(req),
+      curatorUserId: CURATOR_USER_ID,
       limit,
       offset,
     });
@@ -178,15 +189,31 @@ router.post("/ideas/:id/candle", optionalAuthMiddleware, requireAuth, async (req
 
 router.post("/ideas/:id/revive", optionalAuthMiddleware, requireAuth, async (req, res) => {
   try {
-    const idea = await ideaService.archiveIdea(req.params.id, getUserId(req));
+    const idea = await ideaService.reviveIdea(req.params.id, getUserId(req));
     return res.status(200).json({
       success: true,
       data: formatIdeaForFrontend(idea),
-      message: "Tentativa de ressurreicao registrada.",
+      message: "A ideia foi liberada temporariamente da ala dos abandonados.",
     });
   } catch (error) {
     logger.error({ err: error.message }, "Erro ao ressuscitar ideia");
     return res.status(500).json({ success: false, error: "Nao foi possivel ressuscitar ideia." });
+  }
+});
+
+router.post("/ideas/:id/die-again", optionalAuthMiddleware, requireAuth, async (req, res) => {
+  try {
+    const idea = await ideaService.markDeadAgain(req.params.id, getUserId(req), {
+      reason: req.body?.reason,
+    });
+    return res.status(200).json({
+      success: true,
+      data: formatIdeaForFrontend(idea),
+      message: "Registro atualizado. A ideia retornou ao acervo.",
+    });
+  } catch (error) {
+    logger.error({ err: error.message }, "Erro ao registrar nova morte");
+    return res.status(500).json({ success: false, error: "Nao foi possivel registrar a nova morte." });
   }
 });
 

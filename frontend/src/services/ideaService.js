@@ -1,6 +1,19 @@
 import { API_ENDPOINTS } from '../config/api';
 import { authService } from './authService';
 
+function handleNetworkError(error) {
+  if (
+    error instanceof TypeError &&
+    error.message.includes('Failed to fetch')
+  ) {
+    throw new Error(
+      'Nao foi possivel conectar ao backend (http://localhost:3001). Verifique se o servidor backend esta em execucao.',
+    );
+  }
+
+  throw error;
+}
+
 export async function analyzeIdea(ideaData) {
   try {
     const response = await fetch(API_ENDPOINTS.analyzeIdea, {
@@ -19,6 +32,72 @@ export async function analyzeIdea(ideaData) {
   } catch (error) {
     console.error('Erro ao analisar ideia:', error);
     throw error;
+  }
+}
+
+export async function listIdeas({ status = 'all', limit = 100, offset = 0 } = {}) {
+  try {
+    const params = new URLSearchParams({
+      status,
+      limit: String(limit),
+      offset: String(offset),
+    });
+
+    const response = await fetch(`${API_ENDPOINTS.ideas}?${params.toString()}`, {
+      headers: authService.getAuthHeaders(),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.success === false) {
+      throw new Error(data.error || 'Nao foi possivel carregar as ideias');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro ao listar ideias:', error);
+    handleNetworkError(error);
+  }
+}
+
+export async function reviveIdea(ideaId) {
+  try {
+    const response = await fetch(API_ENDPOINTS.ideaRevive(ideaId), {
+      method: 'POST',
+      headers: authService.getAuthHeaders(),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.success === false) {
+      throw new Error(data.error || 'Nao foi possivel registrar a tentativa');
+    }
+
+    return data.data;
+  } catch (error) {
+    console.error('Erro ao ressuscitar ideia:', error);
+    handleNetworkError(error);
+  }
+}
+
+export async function markIdeaDeadAgain(ideaId, reason = '') {
+  try {
+    const response = await fetch(API_ENDPOINTS.ideaDieAgain(ideaId), {
+      method: 'POST',
+      headers: authService.getAuthHeaders(),
+      body: JSON.stringify({ reason }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.success === false) {
+      throw new Error(data.error || 'Nao foi possivel registrar a nova morte');
+    }
+
+    return data.data;
+  } catch (error) {
+    console.error('Erro ao registrar nova morte:', error);
+    handleNetworkError(error);
   }
 }
 
@@ -44,7 +123,7 @@ export async function subscribeToAlerts(email) {
 
     const data = await response.json();
 
-    if (!response.ok) {
+    if (!response.ok || data.success === false) {
       throw new Error(data.error || 'Nao foi possivel assinar os alertas');
     }
 
@@ -52,15 +131,6 @@ export async function subscribeToAlerts(email) {
   } catch (error) {
     console.error('Erro ao assinar alertas:', error);
 
-    if (
-      error instanceof TypeError &&
-      error.message.includes('Failed to fetch')
-    ) {
-      throw new Error(
-        'Nao foi possivel conectar ao backend (http://localhost:3001). Verifique se o servidor backend esta em execucao.',
-      );
-    }
-
-    throw error;
+    handleNetworkError(error);
   }
 }

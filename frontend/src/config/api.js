@@ -12,6 +12,7 @@ export const API_ENDPOINTS = {
   ideaHonor: (ideaId) => `${API_BASE_URL}/api/ideas/${ideaId}/honor`,
   ideaCandle: (ideaId) => `${API_BASE_URL}/api/ideas/${ideaId}/candle`,
   ideaRevive: (ideaId) => `${API_BASE_URL}/api/ideas/${ideaId}/revive`,
+  ideaDieAgain: (ideaId) => `${API_BASE_URL}/api/ideas/${ideaId}/die-again`,
   subscribeAlerts: `${API_BASE_URL}/api/assinar-alertas`,
 };
 
