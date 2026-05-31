@@ -39,7 +39,7 @@ export const MODAL_CONTENTS = {
   Museu das Ideias Abandonadas — ajudando grandes ideias a não saírem do papel desde 2026.
 </p>
 
-  <div className="bg-[rgba(180,140,255,0.05)] border border-[rgba(180,140,255,0.15)] rounded-lg p-4 my-4">
+  <div className="bg-[rgba(180,140,255,0.05)] border border-[rgba(180,140,255,0.15)] rounded-lg p-4 my-4 mt-8">
     <h3 className="text-[#c4a8ff] font-semibold mb-3">
       🏛️ Conselho Supremo das Ideias Abandonadas
     </h3>
@@ -48,29 +48,29 @@ export const MODAL_CONTENTS = {
       Quem deveria ter impedido isso... mas preferiu documentar.
     </p>
 
-    <div className="space-y-3 text-sm">
-      <div>
+    <div className="text-sm">
+      <div className="mb-8">
         <strong>🎤 Pamela · Nível 99</strong><br/>
         Visionária do Caos Criativo<br/>
         <span className="text-[#c4a8ff]">Diretora de Sonhos Não Realizados</span><br/>
         ✨ Transformar delírios de madrugada em funcionalidades oficialmente questionáveis.
       </div>
 
-      <div>
+      <div className="mb-8">
         <strong>💻 Adriana · Nível 99</strong><br/>
         Conjuradora de Interfaces<br/>
         <span className="text-[#c4a8ff]">Diretora de Materialização Digital</span><br/>
         ✨ Converter caos conceitual em telas clicáveis e perigosamente bonitas.
       </div>
 
-      <div>
+      <div className="mb-8">
         <strong>⚙️ Carla · Nível 99</strong><br/>
         Alquimista de Sistemas<br/>
         <span className="text-[#c4a8ff]">Diretora de Engenharia das Gambiarras Nobres</span><br/>
         ✨ Convencer APIs e integrações a cooperarem contra todas as probabilidades.
       </div>
 
-      <div>
+      <div className="mb-8">
         <strong>🚀 Lua · Nível 99</strong><br/>
         Exploradora de Possibilidades<br/>
         <span className="text-[#c4a8ff]">Diretora de Pesquisas Altamente Questionáveis</span><br/>
