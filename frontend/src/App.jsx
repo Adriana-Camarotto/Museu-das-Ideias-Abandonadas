@@ -12,6 +12,7 @@ export default function App() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('Todas');
+  const [searchQuery, setSearchQuery] = useState('');
   const [activeMemTab, setActiveMemTab] = useState('Sobre');
   const [activeRankTab, setActiveRankTab] = useState('Geral');
   const rankData = {
@@ -47,24 +48,24 @@ export default function App() {
   const [isRipModalOpen, setIsRipModalOpen] = useState(false);
   const [ripTargetIdea, setRipTargetIdea] = useState(null);
   const [museumCards, setMuseumCards] = useState([
-    { icon: '🧪', name: 'Teste RIP Modal', dates: '2026 – 2026', cause: 'Clique no botão RIP para testar a funcionalidade' },
-    { icon: '📱', name: 'App de Delivery Gourmet', dates: '2025 – 2025', cause: 'Problema com a integração de pagamento' },
-    { icon: '🎮', name: 'Jogo Indie 2D', dates: '2024 – 2025', cause: 'Sem tempo para terminá-lo' },
-    { icon: '💻', name: 'Plataforma SaaS B2B', dates: '2023 – 2024', cause: 'Competência aumentou demais' },
-    { icon: '🌿', name: 'Eco-Startup Sustentável', dates: '2025 – 2025', cause: 'Custos de produção inviáveis' },
-    { icon: '🎓', name: 'Curso Online Premium', dates: '2023 – 2024', cause: 'Gravação de vídeo muito cansativa' },
-    { icon: '🏠', name: 'Marketplace Imobiliário', dates: '2024 – 2025', cause: 'Burocracia imobiliária complexa' },
-    { icon: '🍕', name: 'Franquia de Pizza Artesanal', dates: '2023 – 2024', cause: 'Aluguel do ponto muito caro' },
-    { icon: '✈️', name: 'Agência de Viagens Alternativa', dates: '2025 – 2025', cause: 'Pandemia voltou do nada' },
-    { icon: '💄', name: 'Loja de Cosméticos Veganos', dates: '2024 – 2024', cause: 'Concorrência muito forte' },
-    { icon: '📚', name: 'Plataforma de E-books', dates: '2023 – 2024', cause: 'Pirataria é um problema' },
-    { icon: '🕯️', name: 'Loja de Velas Aromáticas', dates: '2022 – 2022', cause: 'Pesquisa excessiva no Pinterest' },
-    { icon: '🎬', name: 'Canal de Produtividade', dates: '2023 – 2023', cause: 'Editou o primeiro vídeo e desistiu' },
-    { icon: '🇩🇪', name: 'Curso de Alemão B1', dates: '2021 – 2021', cause: 'Duolingo burnout' },
-    { icon: '💪', name: 'Projeto Fitness', dates: '2022 – 2023', cause: 'Encontrou pão de alho' },
-    { icon: '🎙️', name: 'Podcast sobre Mindset', dates: '2023 – 2023', cause: 'Ninguém ouviu o episódio 1' },
-    { icon: '🎨', name: 'Aprender Aquarela', dates: '2022 – 2022', cause: 'Fase existencial' },
-    { icon: '🦄', name: 'Startup Inovadora', dates: '2024 – 2024', cause: 'Pitch pro espelho' }
+    { icon: '🧪', name: 'Teste RIP Modal', dates: '2026 – 2026', cause: 'Clique no botão RIP para testar a funcionalidade', category: 'Outros' },
+    { icon: '📱', name: 'App de Delivery Gourmet', dates: '2025 – 2025', cause: 'Problema com a integração de pagamento', category: 'Empreendedorismo' },
+    { icon: '🎮', name: 'Jogo Indie 2D', dates: '2024 – 2025', cause: 'Sem tempo para terminá-lo', category: 'Criativas' },
+    { icon: '💻', name: 'Plataforma SaaS B2B', dates: '2023 – 2024', cause: 'Competência aumentou demais', category: 'Empreendedorismo' },
+    { icon: '🌿', name: 'Eco-Startup Sustentável', dates: '2025 – 2025', cause: 'Custos de produção inviáveis', category: 'Empreendedorismo' },
+    { icon: '🎓', name: 'Curso Online Premium', dates: '2023 – 2024', cause: 'Gravação de vídeo muito cansativa', category: 'Estudos' },
+    { icon: '🏠', name: 'Marketplace Imobiliário', dates: '2024 – 2025', cause: 'Burocracia imobiliária complexa', category: 'Empreendedorismo' },
+    { icon: '🍕', name: 'Franquia de Pizza Artesanal', dates: '2023 – 2024', cause: 'Aluguel do ponto muito caro', category: 'Empreendedorismo' },
+    { icon: '✈️', name: 'Agência de Viagens Alternativa', dates: '2025 – 2025', cause: 'Pandemia voltou do nada', category: 'Empreendedorismo' },
+    { icon: '💄', name: 'Loja de Cosméticos Veganos', dates: '2024 – 2024', cause: 'Concorrência muito forte', category: 'Empreendedorismo' },
+    { icon: '📚', name: 'Plataforma de E-books', dates: '2023 – 2024', cause: 'Pirataria é um problema', category: 'Empreendedorismo' },
+    { icon: '🕯️', name: 'Loja de Velas Aromáticas', dates: '2022 – 2022', cause: 'Pesquisa excessiva no Pinterest', category: 'Hobbies' },
+    { icon: '🎬', name: 'Canal de Produtividade', dates: '2023 – 2023', cause: 'Editou o primeiro vídeo e desistiu', category: 'Hobbies' },
+    { icon: '🇩🇪', name: 'Curso de Alemão B1', dates: '2021 – 2021', cause: 'Duolingo burnout', category: 'Estudos' },
+    { icon: '💪', name: 'Projeto Fitness', dates: '2022 – 2023', cause: 'Encontrou pão de alho', category: 'Fitness' },
+    { icon: '🎙️', name: 'Podcast sobre Mindset', dates: '2023 – 2023', cause: 'Ninguém ouviu o episódio 1', category: 'Hobbies' },
+    { icon: '🎨', name: 'Aprender Aquarela', dates: '2022 – 2022', cause: 'Fase existencial', category: 'Criativas' },
+    { icon: '🦄', name: 'Startup Inovadora', dates: '2024 – 2024', cause: 'Pitch pro espelho', category: 'Empreendedorismo' }
   ]);
 
   const mainRef = useRef(null);
@@ -216,7 +217,12 @@ export default function App() {
 
             <div className="search-bar">
               <span className="search-icon">🔍</span>
-              <input type="text" placeholder="Buscar uma ideia..." />
+              <input
+                type="text"
+                placeholder="Buscar uma ideia..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
 
             <div className="filters">
@@ -233,7 +239,13 @@ export default function App() {
             </div>
 
             <div className="ideas-grid">
-              {museumCards.map((card) => (
+              {museumCards
+                .filter(card => {
+                  const matchesCategory = activeFilter === 'Todas' || card.category === activeFilter;
+                  const matchesSearch = searchQuery === '' || card.name.toLowerCase().includes(searchQuery.toLowerCase());
+                  return matchesCategory && matchesSearch;
+                })
+                .map((card) => (
                 <div className="idea-card" key={card.name} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => { setSelectedCandleIdea(card.name); memorialSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
                   {candleCount[card.name] > 0 && (
                     <div style={{ position: 'absolute', top: '8px', left: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 10 }}>
