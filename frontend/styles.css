@@ -307,12 +307,12 @@
         right: 40px;
         top: 0;
         bottom: 0;
-        width: 280px;
+        width: 400px;
         display: flex;
         align-items: center;
         justify-content: center;
-        opacity: 0.18;
-        font-size: 160px;
+        opacity: 0.22;
+        font-size: 220px;
         pointer-events: none;
         filter: sepia(1) hue-rotate(220deg);
       }

@@ -66,7 +66,13 @@ export default function App() {
     { icon: '💪', name: 'Projeto Fitness', dates: '2022 – 2023', cause: 'Encontrou pão de alho', category: 'Fitness' },
     { icon: '🎙️', name: 'Podcast sobre Mindset', dates: '2023 – 2023', cause: 'Ninguém ouviu o episódio 1', category: 'Hobbies' },
     { icon: '🎨', name: 'Aprender Aquarela', dates: '2022 – 2022', cause: 'Fase existencial', category: 'Criativas' },
-    { icon: '🦄', name: 'Startup Inovadora', dates: '2024 – 2024', cause: 'Pitch pro espelho', category: 'Empreendedorismo' }
+    { icon: '🦄', name: 'Startup Inovadora', dates: '2024 – 2024', cause: 'Pitch pro espelho', category: 'Empreendedorismo' },
+    { icon: '🐕', name: 'App de Encontros para Cachorros', dates: '2023 – 2023', cause: 'Seu cachorro recusava matches', category: 'Empreendedorismo' },
+    { icon: '🥗', name: 'Livro de Receitas Veganas', dates: '2022 – 2023', cause: 'Descobriu que alface é chato', category: 'Criativas' },
+    { icon: '🚁', name: 'Curso de Fotografia com Drones', dates: '2024 – 2024', cause: 'Drone caiu na primeira aula', category: 'Estudos' },
+    { icon: '☕', name: 'Blog de Reviews de Cafeterias', dates: '2023 – 2023', cause: 'Ficou muito obeso para sair de casa', category: 'Hobbies' },
+    { icon: '📋', name: 'App de Gestão de Rotina', dates: '2023 – 2024', cause: 'Muito ocupado planejando pra executar', category: 'Organização' },
+    { icon: '🧘', name: 'Desafio de 100 Dias de Meditação', dates: '2024 – 2024', cause: 'Dormiu no dia 5', category: 'Fitness' }
   ]);
 
   const mainRef = useRef(null);

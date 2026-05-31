@@ -14,7 +14,7 @@ export default function Sidebar({ onNavigate }) {
     { id: 'museu', icon: '🔮', label: 'Dentro do Museu' },
     { id: 'memorial', icon: '📜', label: 'Memorial' },
     { id: 'reliquias', icon: '🗃️', label: 'Relíquias' },
-    { id: 'ranking', icon: '🏅', label: 'Ranking do Caos', badge: '5' },
+    { id: 'ranking', icon: '🏅', label: 'Ranking do Caos' },
     { id: 'conquistas', icon: '🎖️', label: 'Conquistas' },
     { id: 'timeline', icon: '⌛', label: 'Linha do Tempo', section: 'Explorar' },
     { id: 'comunidade', icon: '👥', label: 'Comunidade' },
