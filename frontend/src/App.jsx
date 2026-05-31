@@ -4,6 +4,7 @@ import MuseumModal from './components/MuseumModal';
 import { MODAL_CONTENTS } from './components/ModalContent';
 import IdeaForm from './components/IdeaForm';
 import FormModal from './components/FormModal';
+import RipModal from './components/RipModal';
 import { subscribeToAlerts } from './services/ideaService';
 
 export default function App() {
@@ -20,6 +21,17 @@ export default function App() {
   const [newsletterLoading, setNewsletterLoading] = useState(false);
   const [selectedCandleIdea, setSelectedCandleIdea] = useState('Loja de Velas Aromáticas');
   const [candleCount, setCandleCount] = useState({});
+  const [isRipModalOpen, setIsRipModalOpen] = useState(false);
+  const [ripTargetIdea, setRipTargetIdea] = useState(null);
+  const [museumCards, setMuseumCards] = useState([
+    { icon: '🕯️', name: 'Loja de Velas Aromáticas', dates: '2022 – 2022', cause: 'Pesquisa excessiva no Pinterest' },
+    { icon: '🎬', name: 'Canal de Produtividade', dates: '2023 – 2023', cause: 'Editou o primeiro vídeo e desistiu' },
+    { icon: '🇩🇪', name: 'Curso de Alemão B1', dates: '2021 – 2021', cause: 'Duolingo burnout' },
+    { icon: '💪', name: 'Projeto Fitness', dates: '2022 – 2023', cause: 'Encontrou pão de alho' },
+    { icon: '🎙️', name: 'Podcast sobre Mindset', dates: '2023 – 2023', cause: 'Ninguém ouviu o episódio 1' },
+    { icon: '🎨', name: 'Aprender Aquarela', dates: '2022 – 2022', cause: 'Fase existencial' },
+    { icon: '🦄', name: 'Startup Inovadora', dates: '2024 – 2024', cause: 'Pitch pro espelho' }
+  ]);
 
   const mainRef = useRef(null);
   const museumSectionRef = useRef(null);
@@ -28,16 +40,6 @@ export default function App() {
   const rankingSectionRef = useRef(null);
   const achievementSectionRef = useRef(null);
   const timelineSectionRef = useRef(null);
-
-  const museumCards = [
-    { icon: '🕯️', name: 'Loja de Velas Aromáticas', dates: '2022 – 2022', cause: 'Pesquisa excessiva no Pinterest' },
-    { icon: '🎬', name: 'Canal de Produtividade', dates: '2023 – 2023', cause: 'Editou o primeiro vídeo e desistiu' },
-    { icon: '🇩🇪', name: 'Curso de Alemão B1', dates: '2021 – 2021', cause: 'Duolingo burnout' },
-    { icon: '💪', name: 'Projeto Fitness', dates: '2022 – 2023', cause: 'Encontrou pão de alho' },
-    { icon: '🎙️', name: 'Podcast sobre Mindset', dates: '2023 – 2023', cause: 'Ninguém ouviu o episódio 1' },
-    { icon: '🎨', name: 'Aprender Aquarela', dates: '2022 – 2022', cause: 'Fase existencial' },
-    { icon: '🦄', name: 'Startup Inovadora', dates: '2024 – 2024', cause: 'Pitch pro espelho' }
-  ];
 
   const filters = ['Todas', 'Empreendedorismo', 'Estudos', 'Fitness', 'Hobbies', 'Criativas', 'Organização', 'Outros'];
   const survivalPcts = [7, 13, 19, 31, 48];
@@ -70,6 +72,24 @@ export default function App() {
   const closeModal = () => {
     setActiveModal(null);
     setIsFormModalOpen(false);
+  };
+
+  const handleRipClick = (idea) => {
+    setRipTargetIdea(idea);
+    setIsRipModalOpen(true);
+  };
+
+  const handleRipConfirm = () => {
+    if (ripTargetIdea) {
+      setMuseumCards((prev) => prev.filter((card) => card.name !== ripTargetIdea.name));
+      setRipTargetIdea(null);
+
+      // Se a ideia deletada era a selecionada, muda para a primeira
+      if (selectedCandleIdea === ripTargetIdea.name && museumCards.length > 1) {
+        const remainingCards = museumCards.filter((card) => card.name !== ripTargetIdea.name);
+        setSelectedCandleIdea(remainingCards[0].name);
+      }
+    }
   };
 
   const handleLightCandle = () => {
@@ -284,9 +304,34 @@ export default function App() {
               )}
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button type="button" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text2)', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>◀</button>
-              <button type="button" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text2)', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>▶</button>
-              <button type="button" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--danger)', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>💔</button>
+              <button
+                type="button"
+                onClick={() => handleRipClick(selectedIdea)}
+                style={{
+                  background: 'linear-gradient(135deg, #ff6060, #ff4444)',
+                  border: 'none',
+                  color: 'white',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 20px rgba(255, 96, 96, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = 'none';
+                }}
+              >
+                🪦 RIP
+              </button>
             </div>
           </div>
 
@@ -569,6 +614,13 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <RipModal
+        isOpen={isRipModalOpen}
+        onClose={() => setIsRipModalOpen(false)}
+        idea={ripTargetIdea}
+        onConfirm={handleRipConfirm}
+      />
 
     </div>
   );
