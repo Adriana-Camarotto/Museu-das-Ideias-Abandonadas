@@ -79,7 +79,7 @@ export default function MuseumModal({
             {/* Borda interna (dourada envelhecida) */}
             <div className="bg-gradient-to-br from-[#e8b86d]/20 to-[#c4a8ff]/10 p-1 rounded-md">
               {/* Conteúdo interno com Card roxo */}
-              <div className="rounded-sm border border-[rgba(232,184,109,0.15)]" style={{ position: 'relative', background: '#6b4fa1', padding: '48px' }}>
+              <div className="rounded-sm border border-[rgba(232,184,109,0.15)]" style={{ position: 'relative', background: '#161020', padding: '48px' }}>
 
                 {/* Botão Fechar - posicionado à direita superior */}
                 <button

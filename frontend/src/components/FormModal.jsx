@@ -120,7 +120,7 @@ export default function FormModal({ isOpen, onClose, children }) {
               <div style={{
                 borderRadius: '10px',
                 border: '1px solid rgba(232, 184, 109, 0.15)',
-                background: '#6b4fa1',
+                background: '#161020',
                 padding: '48px',
                 position: 'relative'
               }}>
