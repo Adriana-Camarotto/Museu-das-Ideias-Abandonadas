@@ -493,7 +493,6 @@ export default function App() {
             <div className="achievement"><div className="ach-medal">🛍</div><div><div className="ach-name">Comprou Antes de Fazer</div><div className="ach-desc">Investiu em itens antes de validar a ideia</div></div></div>
             <div className="achievement"><div className="ach-medal">🎴</div><div><div className="ach-name">Especialista em Tutoriais</div><div className="ach-desc">Assistiu 50+ tutoriais e não fez nada</div></div></div>
             <div className="achievement"><div className="ach-medal">🗂️</div><div><div className="ach-name">Mestre do Planejamento</div><div className="ach-desc">Planejou mais do que executou</div></div></div>
-            <button className="btn-outline" type="button" style={{ width: '100%', marginTop: '4px', fontSize: '12px' }}>Ver todas conquistas</button>
           </section>
 
         </div>
