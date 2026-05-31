@@ -24,6 +24,7 @@ export default function App() {
   const [isRipModalOpen, setIsRipModalOpen] = useState(false);
   const [ripTargetIdea, setRipTargetIdea] = useState(null);
   const [museumCards, setMuseumCards] = useState([
+    { icon: '🧪', name: 'Teste RIP Modal', dates: '2026 – 2026', cause: 'Clique no botão RIP para testar a funcionalidade' },
     { icon: '🕯️', name: 'Loja de Velas Aromáticas', dates: '2022 – 2022', cause: 'Pesquisa excessiva no Pinterest' },
     { icon: '🎬', name: 'Canal de Produtividade', dates: '2023 – 2023', cause: 'Editou o primeiro vídeo e desistiu' },
     { icon: '🇩🇪', name: 'Curso de Alemão B1', dates: '2021 – 2021', cause: 'Duolingo burnout' },
@@ -215,19 +216,21 @@ export default function App() {
                     className="idea-thumb"
                     style={{
                       background:
-                        card.name === 'Loja de Velas Aromáticas'
-                          ? 'linear-gradient(135deg, #2a1a1a, #3d2020)'
-                          : card.name === 'Canal de Produtividade'
-                            ? 'linear-gradient(135deg, #1a2a1a, #203520)'
-                            : card.name === 'Curso de Alemão B1'
-                              ? 'linear-gradient(135deg, #1a1a2a, #202040)'
-                              : card.name === 'Projeto Fitness'
-                                ? 'linear-gradient(135deg, #201a2a, #30203d)'
-                                : card.name === 'Podcast sobre Mindset'
-                                  ? 'linear-gradient(135deg, #1a2028, #20283d)'
-                                  : card.name === 'Aprender Aquarela'
-                                    ? 'linear-gradient(135deg, #28201a, #3d3020)'
-                                    : 'linear-gradient(135deg, #1e1a30, #282048)'
+                        card.name === 'Teste RIP Modal'
+                          ? 'linear-gradient(135deg, #2a1f3a, #3d2a4d)'
+                          : card.name === 'Loja de Velas Aromáticas'
+                            ? 'linear-gradient(135deg, #2a1a1a, #3d2020)'
+                            : card.name === 'Canal de Produtividade'
+                              ? 'linear-gradient(135deg, #1a2a1a, #203520)'
+                              : card.name === 'Curso de Alemão B1'
+                                ? 'linear-gradient(135deg, #1a1a2a, #202040)'
+                                : card.name === 'Projeto Fitness'
+                                  ? 'linear-gradient(135deg, #201a2a, #30203d)'
+                                  : card.name === 'Podcast sobre Mindset'
+                                    ? 'linear-gradient(135deg, #1a2028, #20283d)'
+                                    : card.name === 'Aprender Aquarela'
+                                      ? 'linear-gradient(135deg, #28201a, #3d3020)'
+                                      : 'linear-gradient(135deg, #1e1a30, #282048)'
                     }}
                   >
                     <span>{card.icon}</span>
