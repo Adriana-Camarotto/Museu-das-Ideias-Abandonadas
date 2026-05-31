@@ -358,6 +358,7 @@ export default function App() {
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation();
+                  playRandomAudio('abrir formulario');
                   setIsFormModalOpen(true);
                 }}
               >
@@ -625,7 +626,7 @@ export default function App() {
           <section className="footer-widget">
             <div className="footer-title">📱 Compartilhar memorial</div>
             <div className="footer-sub">Mostre para o mundo o seu potencial desperdiçado.</div>
-            <button className="btn-primary" type="button" style={{ fontSize: '12px' }} onClick={() => playRandomAudio('Gerar card para compartilhar')}>📩 Gerar card para compartilhar</button>
+            <button className="btn-primary" type="button" style={{ fontSize: '12px' }} onClick={() => playRandomAudio('gerar card para compartilhar')}>📩 Gerar card para compartilhar</button>
           </section>
 
           <section className="footer-widget">
