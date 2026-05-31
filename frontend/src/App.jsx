@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import MuseumModal from './components/MuseumModal';
 import { MODAL_CONTENTS } from './components/ModalContent';
@@ -15,6 +15,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMemTab, setActiveMemTab] = useState('Sobre');
   const [activeRankTab, setActiveRankTab] = useState('Geral');
+  const [highlightRankingCard, setHighlightRankingCard] = useState(false);
   const rankData = {
     'Geral': [
       { pos: 1, avatar: '👑', name: 'Rainha dos Começos', count: 142 },
@@ -73,28 +74,48 @@ export default function App() {
   const memorialSectionRef = useRef(null);
   const reliquiarySectionRef = useRef(null);
   const rankingSectionRef = useRef(null);
+  const rankingCardRef = useRef(null);
   const achievementSectionRef = useRef(null);
   const timelineSectionRef = useRef(null);
+  const isAutoScrollingRef = useRef(false);
 
   const filters = ['Todas', 'Empreendedorismo', 'Estudos', 'Fitness', 'Hobbies', 'Criativas', 'Organização', 'Outros'];
   const survivalPcts = [7, 13, 19, 31, 48];
   const survivalPct = survivalPcts[selectedMood] ?? 13;
 
+  useEffect(() => {
+    const handleScroll = () => {
+      if (highlightRankingCard && !isAutoScrollingRef.current) {
+        setHighlightRankingCard(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [highlightRankingCard]);
+
   const handleNavigate = (section) => {
     setActiveModal(null);
 
-    const scrollToElement = (ref) => {
+    const scrollToElement = (ref, center = false) => {
       if (ref?.current) {
-        ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        ref.current.scrollIntoView({ behavior: 'smooth', block: center ? 'center' : 'start' });
       }
     };
 
     const sectionMap = {
-      'inicio': () => mainRef.current?.parentElement?.scrollTo({ top: 0, behavior: 'smooth' }),
+      'inicio': () => window.scrollTo({ top: 0, behavior: 'smooth' }),
       'museu': () => scrollToElement(museumSectionRef),
       'memorial': () => setActiveModal('memorial'),
       'reliquias': () => { setActiveMemTab('Relíquias'); scrollToElement(reliquiarySectionRef); },
-      'ranking': () => scrollToElement(rankingSectionRef),
+      'ranking': () => {
+        setHighlightRankingCard(true);
+        isAutoScrollingRef.current = true;
+        scrollToElement(rankingCardRef, true);
+        setTimeout(() => {
+          isAutoScrollingRef.current = false;
+        }, 800);
+      },
       'conquistas': () => { setActiveMemTab('Conquistas'); scrollToElement(achievementSectionRef); },
       'timeline': () => { setActiveMemTab('Linha do Tempo'); scrollToElement(timelineSectionRef); },
       'comunidade': () => scrollToElement(museumSectionRef),
@@ -365,7 +386,7 @@ export default function App() {
               </div>
             </div>
 
-            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '18px', marginBottom: '20px' }}>
+            <div ref={rankingCardRef} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '18px', marginBottom: '20px', boxShadow: highlightRankingCard ? '0 0 30px rgba(155, 127, 244, 0.8), 0 0 60px rgba(155, 127, 244, 0.4)' : 'none', transition: 'box-shadow 0.3s ease' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                 <div className="sec-title rank-glitch-title" style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em' }} data-text="Rankings do caos">Rankings do caos</div>
                 <div className="rank-live-badge"><span className="rank-live-dot"></span>AO VIVO</div>
