@@ -241,19 +241,6 @@ export default function App() {
                         e.stopPropagation();
                         handleRipClick(card);
                       }}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: 'inherit',
-                        padding: '0',
-                        fontSize: 'inherit',
-                        fontWeight: 'inherit',
-                        margin: '0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
                     >
                       🪦 RIP
                     </button>
