@@ -9,6 +9,11 @@ import ApiStatus from './ApiStatus';
 export default function Sidebar({ onNavigate }) {
   const [activeLabel, setActiveLabel] = useState('Inicio');
 
+  const handleLogoClick = () => {
+    setActiveLabel('Inicio');
+    onNavigate('inicio');
+  };
+
   const menuItems = [
     { id: 'inicio', icon: '\u{1F3DB}\uFE0F', label: 'Inicio' },
     { id: 'museu', icon: '\u{1F5BC}\uFE0F', label: 'Dentro do Museu' },
@@ -23,7 +28,7 @@ export default function Sidebar({ onNavigate }) {
 
   return (
     <aside className="sidebar">
-      <div className="logo-wrap">
+      <button className="logo-wrap logo-wrap--button" type="button" onClick={handleLogoClick}>
         <div className="logo-icon">
           {'\u{1F3DB}\uFE0F'}
         </div>
@@ -31,7 +36,7 @@ export default function Sidebar({ onNavigate }) {
           <strong>MUSEU</strong>
           <span>DAS IDEIAS ABANDONADAS</span>
         </div>
-      </div>
+      </button>
 
       <nav>
         <div className="nav-label">Navegacao</div>

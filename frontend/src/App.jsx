@@ -311,18 +311,49 @@ export default function App() {
     };
 
     const sectionMap = {
-      'inicio': () => mainRef.current?.parentElement?.scrollTo({ top: 0, behavior: 'smooth' }),
+      'inicio': () => {
+        setMuseumViewMode('recentes');
+        mainRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        mainRef.current?.parentElement?.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
       'museu': () => scrollToElement(museumSectionRef),
-      'memorial': () => setActiveModal('memorial'),
+      'memorial': () => {
+        setActiveMemTab('Sobre');
+        scrollToElement(memorialSectionRef);
+      },
       'reliquias': () => scrollToElement(reliquiarySectionRef),
       'ranking': () => scrollToElement(rankingSectionRef),
       'conquistas': () => scrollToElement(achievementSectionRef),
       'timeline': () => scrollToElement(timelineSectionRef),
-      'comunidade': () => scrollToElement(museumSectionRef),
+      'comunidade': () => setActiveModal('community'),
       'sobre': () => setActiveModal('about')
     };
 
     sectionMap[section]?.();
+  };
+
+  const scrollToMuseumCollection = () => {
+    museumSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleEnterMuseum = () => {
+    setActiveModal(null);
+    setMuseumViewMode('recentes');
+    scrollToMuseumCollection();
+    announceCuratorAction('A Curadoria abriu os portoes principais. Recentes primeiro, como manda o protocolo dramatico.');
+  };
+
+  const handleOpenGuidedVisit = () => {
+    setActiveModal('guided-tour');
+    announceCuratorAction('A Curadoria separou um roteiro curto. Prometeu solenidade, mas trouxe ironia no bolso.');
+  };
+
+  const handleStartGuidedVisit = () => {
+    setActiveModal(null);
+    setMuseumViewMode('recentes');
+    scrollToMuseumCollection();
+    announceCuratorAction('Visita guiada iniciada. Por favor, nao toque nas reliquias nem nas promessas antigas.');
   };
 
   const handleAuthSubmit = async (event) => {
@@ -655,6 +686,42 @@ export default function App() {
     }))
     .sort((a, b) => a.survivalPercentage - b.survivalPercentage);
 
+  const countByField = (fieldName) => (
+    Object.values(museumCards.reduce((acc, card) => {
+      const rawValue = String(card[fieldName] || 'Sem registro').trim() || 'Sem registro';
+      const key = rawValue.length > 54 ? `${rawValue.slice(0, 51)}...` : rawValue;
+      acc[key] = acc[key] || { name: key, count: 0 };
+      acc[key].count += 1;
+      return acc;
+    }, {}))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+  );
+
+  const generalRankingItems = rankingCards.slice(0, 5).map((card, index) => ({
+    icon: index === 0 ? '\u{1F451}' : card.icon,
+    name: card.name,
+    count: `${card.survivalPercentage}% de sobrevivencia - ${card.category}`,
+  }));
+
+  const categoryRankingItems = countByField('category').map((item) => ({
+    icon: '\u{1F3F7}\uFE0F',
+    name: item.name,
+    count: `${item.count} reliquia${item.count === 1 ? '' : 's'} nesta ala`,
+  }));
+
+  const causeRankingItems = countByField('cause').map((item) => ({
+    icon: '\u{1F50E}',
+    name: item.name,
+    count: `${item.count} caso${item.count === 1 ? '' : 's'} com esta causa`,
+  }));
+
+  const displayedRankingItems = activeRankTab === 'Por categoria'
+    ? categoryRankingItems
+    : activeRankTab === 'Por causa da morte'
+      ? causeRankingItems
+      : generalRankingItems;
+
   const totalCandlesLit = Object.values(candleCount).reduce((sum, count) => sum + Number(count || 0), 0);
   const hasUserIdea = museumCards.some((card) => card.source === 'usuario');
   const hasRevivalAttempt = museumCards.some((card) => getLifecycleRecord(card.name).revival_attempts > 0);
@@ -818,7 +885,8 @@ export default function App() {
     announceCuratorAction(message);
   };
 
-  const handleViewAllRelics = () => {
+  const handleViewAllRelics = (event) => {
+    event?.stopPropagation();
     setActiveFilter('Todas');
     setSearchTerm('');
     setMuseumViewMode('todas');
@@ -827,13 +895,15 @@ export default function App() {
     announceCuratorAction('A Curadoria limpou filtros, poeira e suspeitas. Todas as reliquias voltaram para a vitrine.');
   };
 
-  const handleViewFullRanking = () => {
+  const handleViewFullRanking = (event) => {
+    event?.stopPropagation();
     setActiveModal('ranking');
     rankingSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     announceCuratorAction('O ranking completo foi retirado do cofre. A gloria e questionavel, mas esta catalogada.');
   };
 
-  const handleViewAllAchievements = () => {
+  const handleViewAllAchievements = (event) => {
+    event?.stopPropagation();
     setActiveModal('achievements');
     achievementSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     announceCuratorAction('Todas as conquistas foram expostas. Algumas merecem aplausos, outras silencio respeitoso.');
@@ -958,26 +1028,44 @@ export default function App() {
               {!notificationsSeen && <div className="notif-dot"></div>}
             </button>
             {isNotificationsOpen && (
-              <div className="notifications-panel">
-                <div className="notifications-title">Chamados da Curadoria</div>
-                {notificationLog.length > 0 ? (
-                  <div className="notifications-list">
-                    {notificationLog.map((notification) => (
-                      <div className="notification-item" key={notification.id}>
-                        <div className="notification-icon" aria-hidden="true">{notification.icon}</div>
-                        <div>
-                          <strong>{notification.title}</strong>
-                          <span>{notification.text}</span>
+              <>
+                <button
+                  className="notifications-scrim"
+                  type="button"
+                  aria-label="Fechar chamados da Curadoria"
+                  onClick={() => setIsNotificationsOpen(false)}
+                />
+                <div className="notifications-panel">
+                  <div className="notifications-header">
+                    <div className="notifications-title">Chamados da Curadoria</div>
+                    <button
+                      className="notifications-close"
+                      type="button"
+                      aria-label="Fechar notificacoes"
+                      onClick={() => setIsNotificationsOpen(false)}
+                    >
+                      {'\u{2715}'}
+                    </button>
+                  </div>
+                  {notificationLog.length > 0 ? (
+                    <div className="notifications-list">
+                      {notificationLog.map((notification) => (
+                        <div className="notification-item" key={notification.id}>
+                          <div className="notification-icon" aria-hidden="true">{notification.icon}</div>
+                          <div>
+                            <strong>{notification.title}</strong>
+                            <span>{notification.text}</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="notifications-empty">
-                    Nenhum chamado da Curadoria no momento. Aproveite o silencio institucional.
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="notifications-empty">
+                      Nenhum chamado da Curadoria no momento. Aproveite o silencio institucional.
+                    </div>
+                  )}
+                </div>
+              </>
             )}
             <button className="btn-outline" type="button" onClick={handleLogout} style={{ padding: '8px 12px' }}>
               Sair
@@ -1000,8 +1088,8 @@ export default function App() {
               Preservamos sonhos interrompidos, planos mirabolantes e projetos que não viraram realidade.
             </p>
             <div className="hero-btns">
-              <button className="btn-primary" type="button">Entrar no Museu ✦</button>
-              <button className="btn-outline" type="button">🎫 Fazer visita guiada</button>
+              <button className="btn-primary" type="button" onClick={handleEnterMuseum}>Entrar no Museu ✦</button>
+              <button className="btn-outline" type="button" onClick={handleOpenGuidedVisit}>🎫 Fazer visita guiada</button>
             </div>
             <div className="hero-stats">
               <div><div className="hero-stat-label">Ideias enterradas</div><div className="hero-stat-val">12.842</div></div>
@@ -1014,7 +1102,7 @@ export default function App() {
 
         <div className="content-grid">
           <div className="center-col">
-            <div className="sec-header" ref={museumSectionRef}>
+            <div className="sec-header" id="dentro-do-museu" ref={museumSectionRef}>
               <div>
                 <div className="sec-title">Dentro do museu</div>
                 <div className="sec-sub">Explore as alas do nosso acervo de sonhos não realizados.</div>
@@ -1330,17 +1418,17 @@ export default function App() {
               <div className="sec-title" style={{ fontSize: '14px' }}>Relíquias encontradas</div>
             </div>
             <div className="relics-grid relics-grid--found">
-              {selectedIdeaRelics.slice(0, 4).map((relic) => (
+              {selectedIdeaRelics.slice(0, 4).map((relic, index) => (
                 <div className="relic-item relic-item--found" key={relic.name}>
                   <div className="relic-icon">{relic.icon}</div>
                   <div>
+                    <div className="relic-evidence">Evidencia {index + 1}</div>
                     <div className="relic-name">{relic.name}</div>
-                    <div className="relic-desc">{relic.description}</div>
                   </div>
                 </div>
               ))}
             </div>
-            <button className="btn-outline" type="button" style={{ width: '100%', marginTop: '12px', fontSize: '12px' }}>Ver todas as relíquias</button>
+            <button className="btn-outline" type="button" onClick={handleViewAllRelics} style={{ width: '100%', marginTop: '12px', fontSize: '12px' }}>Ver todas as relíquias</button>
           </section>
 
           <section className="bottom-sec" ref={rankingSectionRef} style={{ background: activeMemTab === 'Estatísticas' ? 'var(--bg3)' : 'transparent', padding: activeMemTab === 'Estatísticas' ? '12px' : '20px', margin: activeMemTab === 'Estatísticas' ? '8px' : '0', borderRadius: activeMemTab === 'Estatísticas' ? 'var(--radius-sm)' : '0', boxShadow: activeMemTab === 'Estatísticas' ? '0 0 20px rgba(155, 127, 244, 0.6), 0 0 40px rgba(155, 127, 244, 0.3)' : 'none', transition: 'all 0.2s' }}>
@@ -1359,12 +1447,17 @@ export default function App() {
                 </button>
               ))}
             </div>
-            <div className="rank-item"><div className="rank-num">1.</div><div className="rank-avatar">👑</div><div className="rank-info"><div className="rank-name">Rainha dos Começos</div><div className="rank-count">142 ideias abandonadas</div></div></div>
-            <div className="rank-item"><div className="rank-num">2.</div><div className="rank-avatar">🐐</div><div className="rank-info"><div className="rank-name">Mestre da Procrastinação</div><div className="rank-count">97 ideias abandonadas</div></div></div>
-            <div className="rank-item"><div className="rank-num">3.</div><div className="rank-avatar">⚡</div><div className="rank-info"><div className="rank-name">Deus do Potencial</div><div className="rank-count">73 ideias abandonadas</div></div></div>
-            <div className="rank-item"><div className="rank-num">4.</div><div className="rank-avatar">🔮</div><div className="rank-info"><div className="rank-name">Imperador dos "Amanhãs"</div><div className="rank-count">65 ideias abandonadas</div></div></div>
-            <div className="rank-item"><div className="rank-num">5.</div><div className="rank-avatar">🧩</div><div className="rank-info"><div className="rank-name">Senhor das Abas Abertas</div><div className="rank-count">61 ideias abandonadas</div></div></div>
-            <button className="btn-outline" type="button" style={{ width: '100%', marginTop: '8px', fontSize: '12px' }}>Ver ranking completo</button>
+            {displayedRankingItems.map((item, index) => (
+              <div className="rank-item" key={`${activeRankTab}-${item.name}`}>
+                <div className="rank-num">{index + 1}.</div>
+                <div className="rank-avatar">{item.icon}</div>
+                <div className="rank-info">
+                  <div className="rank-name">{item.name}</div>
+                  <div className="rank-count">{item.count}</div>
+                </div>
+              </div>
+            ))}
+            <button className="btn-outline" type="button" onClick={handleViewFullRanking} style={{ width: '100%', marginTop: '8px', fontSize: '12px' }}>Ver ranking completo</button>
           </section>
 
           <section className="bottom-sec" ref={achievementSectionRef} style={{ background: activeMemTab === 'Conquistas' ? 'var(--bg3)' : 'transparent', padding: activeMemTab === 'Conquistas' ? '12px' : '20px', margin: activeMemTab === 'Conquistas' ? '8px' : '0', borderRadius: activeMemTab === 'Conquistas' ? 'var(--radius-sm)' : '0', boxShadow: activeMemTab === 'Conquistas' ? '0 0 20px rgba(155, 127, 244, 0.6), 0 0 40px rgba(155, 127, 244, 0.3)' : 'none', transition: 'all 0.2s' }}>
@@ -1378,14 +1471,13 @@ export default function App() {
                   key={achievement.name}
                 >
                   <div className="achievement-badge-medal">{achievement.unlocked ? achievement.icon : '\u{1F512}'}</div>
-                  <div>
+                  <div className="achievement-badge-copy">
                     <div className="ach-name">{achievement.name}</div>
-                    <div className="ach-desc">{achievement.unlocked ? 'Selo concedido pela Curadoria.' : 'Registro pendente.'}</div>
                   </div>
                 </div>
               ))}
             </div>
-            <button className="btn-outline" type="button" style={{ width: '100%', marginTop: '4px', fontSize: '12px' }}>Ver todas conquistas</button>
+            <button className="btn-outline" type="button" onClick={handleViewAllAchievements} style={{ width: '100%', marginTop: '4px', fontSize: '12px' }}>Ver todas conquistas</button>
           </section>
 
         </div>
@@ -1482,6 +1574,81 @@ export default function App() {
           title={MODAL_CONTENTS.memorial.title}
         >
           {MODAL_CONTENTS.memorial.content}
+        </MuseumModal>
+      )}
+
+      {activeModal === 'guided-tour' && (
+        <MuseumModal
+          isOpen={true}
+          onClose={closeModal}
+          title="Visita Guiada da Curadoria"
+          hideFooter
+        >
+          <div className="guided-tour-modal">
+            <p>
+              A Curadoria preparou um trajeto breve pelo acervo: ideias recentes, memorial,
+              reliquias e conquistas duvidosas. Nada sera julgado em voz alta. Provavelmente.
+            </p>
+            <div className="guided-tour-steps">
+              <div className="guided-tour-step">
+                <span aria-hidden="true">{'\u{1F3DB}\uFE0F'}</span>
+                <div>
+                  <strong>Primeira sala</strong>
+                  <em>As reliquias recentes aparecem primeiro, porque o drama ainda esta fresco.</em>
+                </div>
+              </div>
+              <div className="guided-tour-step">
+                <span aria-hidden="true">{'\u{1F56F}\uFE0F'}</span>
+                <div>
+                  <strong>Memorial</strong>
+                  <em>Cada ideia pode receber homenagem, velinha e um pouco de dignidade tardia.</em>
+                </div>
+              </div>
+              <div className="guided-tour-step">
+                <span aria-hidden="true">{'\u{1F5DD}'}</span>
+                <div>
+                  <strong>Reserva tecnica</strong>
+                  <em>Relatos, objetos e evidencias de planejamento excessivo ficam catalogados aqui.</em>
+                </div>
+              </div>
+            </div>
+            <div className="lifecycle-modal-actions">
+              <button className="btn-primary" type="button" onClick={handleStartGuidedVisit}>
+                Iniciar visita
+              </button>
+              <button className="btn-outline" type="button" onClick={closeModal}>
+                Permanecer no saguao
+              </button>
+            </div>
+          </div>
+        </MuseumModal>
+      )}
+
+      {activeModal === 'community' && (
+        <MuseumModal
+          isOpen={true}
+          onClose={closeModal}
+          title="Mural da Comunidade"
+          hideFooter
+        >
+          <div className="collection-modal-list">
+            <div className="collection-modal-item collection-modal-item--with-icon">
+              <div className="collection-modal-icon" aria-hidden="true">{'\u{1F465}'}</div>
+              <div>
+                <span>Visitantes</span>
+                <strong>Comunidade em observacao</strong>
+                <em>O mural publico ainda esta sendo catalogado. Por enquanto, a Curadoria registra sua presenca com um aceno solene.</em>
+              </div>
+            </div>
+            <div className="collection-modal-item collection-modal-item--with-icon">
+              <div className="collection-modal-icon" aria-hidden="true">{'\u{1F56F}\uFE0F'}</div>
+              <div>
+                <span>Ritual coletivo</span>
+                <strong>Homenagens recentes</strong>
+                <em>Use o memorial para acender velinhas, alternar reliquias e preservar o potencial desperdicado com dignidade teatral.</em>
+              </div>
+            </div>
+          </div>
         </MuseumModal>
       )}
 

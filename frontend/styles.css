@@ -64,6 +64,20 @@
         align-items: center;
         gap: 10px;
       }
+      .logo-wrap--button {
+        width: 100%;
+        border: 0;
+        border-bottom: 1px solid var(--border);
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        text-align: left;
+        font-family: inherit;
+        transition: background 0.2s ease;
+      }
+      .logo-wrap--button:hover {
+        background: rgba(155, 127, 244, 0.08);
+      }
       .logo-icon {
         width: 40px;
         height: 40px;
@@ -104,6 +118,7 @@
         padding: 12px 16px 4px;
       }
       .nav-item {
+        width: 100%;
         display: flex;
         align-items: center;
         gap: 10px;
@@ -111,6 +126,10 @@
         cursor: pointer;
         color: var(--text2);
         font-size: 13px;
+        font-family: inherit;
+        text-align: left;
+        background: transparent;
+        border: 0;
         border-left: 2px solid transparent;
         transition: all 0.2s;
       }
@@ -1931,6 +1950,7 @@
 
       .topbar-right {
         position: relative;
+        z-index: 10000;
       }
 
       .notif-btn {
@@ -1952,10 +1972,10 @@
       }
 
       .notifications-panel {
-        position: absolute;
-        top: 42px;
-        right: 58px;
-        z-index: 140;
+        position: fixed !important;
+        top: 58px;
+        right: 24px;
+        z-index: 2147483647;
         width: min(340px, calc(100vw - 32px));
         border: 1px solid var(--border2);
         border-radius: var(--radius-sm);
@@ -1966,12 +1986,52 @@
         padding: 12px;
       }
 
+      .notifications-scrim {
+        position: fixed !important;
+        inset: 0;
+        z-index: 2147483646;
+        border: 0;
+        background: transparent;
+        cursor: default;
+      }
+
+      .topbar {
+        position: relative;
+        z-index: 10000;
+      }
+
+      .notifications-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
       .notifications-title {
         color: var(--gold);
         font-family: "Cinzel", serif;
         font-size: 13px;
         font-weight: 700;
-        margin-bottom: 10px;
+        margin-bottom: 0;
+      }
+
+      .notifications-close {
+        width: 28px;
+        height: 28px;
+        border: 1px solid rgba(232, 184, 109, 0.2);
+        border-radius: 7px;
+        background: rgba(232, 184, 109, 0.08);
+        color: var(--gold2);
+        cursor: pointer;
+        line-height: 1;
+        transition: border-color 0.2s ease, background 0.2s ease, transform 0.16s ease;
+      }
+
+      .notifications-close:hover {
+        border-color: rgba(232, 184, 109, 0.44);
+        background: rgba(232, 184, 109, 0.14);
+        transform: translateY(-1px);
       }
 
       .notifications-list {
@@ -2052,64 +2112,93 @@
 
       .relics-grid--found {
         display: grid;
-        gap: 8px;
+        gap: 10px;
       }
 
       .relic-item--found {
         display: grid;
-        grid-template-columns: 34px minmax(0, 1fr);
-        gap: 9px;
-        align-items: start;
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
         border: 1px solid rgba(232, 184, 109, 0.16);
         border-radius: 8px;
         background:
           linear-gradient(135deg, rgba(232, 184, 109, 0.08), transparent),
           rgba(30, 22, 48, 0.6);
-        padding: 9px;
+        padding: 12px;
       }
 
       .relic-item--found .relic-icon {
-        width: 34px;
-        height: 34px;
+        width: 42px;
+        height: 42px;
         display: grid;
         place-items: center;
         border-radius: 7px;
         background: rgba(15, 11, 24, 0.72);
         border: 1px solid rgba(232, 184, 109, 0.22);
+        color: var(--gold2);
+        font-size: 18px;
       }
 
       .relic-desc {
         color: var(--text3);
-        font-size: 10.5px;
-        line-height: 1.35;
-        margin-top: 3px;
+        font-size: 11px;
+        line-height: 1.45;
+        margin-top: 4px;
+      }
+
+      .relic-evidence {
+        color: var(--gold);
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        line-height: 1.2;
+        margin-bottom: 3px;
+        text-transform: uppercase;
       }
 
       .achievement-badges {
         display: grid;
-        gap: 8px;
+        gap: 10px;
       }
 
       .achievement-badge {
         display: grid;
-        grid-template-columns: 38px minmax(0, 1fr);
-        gap: 10px;
+        grid-template-columns: 52px minmax(0, 1fr);
+        gap: 14px;
         align-items: center;
         border: 1px solid var(--border);
         border-radius: 8px;
         background: rgba(30, 22, 48, 0.64);
-        padding: 9px;
+        min-height: 76px;
+        padding: 11px 12px;
       }
 
       .achievement-badge-medal {
-        width: 38px;
-        height: 38px;
+        width: 52px;
+        height: 52px;
         display: grid;
         place-items: center;
         border-radius: 50%;
         border: 1px solid rgba(232, 184, 109, 0.32);
         background: radial-gradient(circle, rgba(232, 184, 109, 0.18), rgba(124, 92, 232, 0.1));
         box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.03);
+        color: var(--gold2);
+        font-size: 18px;
+      }
+
+      .achievement-badge-copy {
+        min-width: 0;
+      }
+
+      .achievement-badge .ach-name {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        color: var(--text);
+        font-family: "Cinzel", serif;
+        font-size: 11px;
+        line-height: 1.35;
       }
 
       .achievement-badge--unlocked {
@@ -2232,7 +2321,7 @@
 
       .collection-modal-list {
         display: grid;
-        gap: 10px;
+        gap: 12px;
       }
 
       .collection-modal-intro {
@@ -2245,22 +2334,24 @@
 
       .collection-modal-item {
         display: grid;
-        gap: 4px;
-        border: 1px solid var(--border);
+        gap: 6px;
+        border: 1px solid rgba(232, 184, 109, 0.16);
         border-radius: var(--radius-sm);
-        background: rgba(30, 22, 48, 0.72);
-        padding: 12px;
+        background:
+          linear-gradient(135deg, rgba(232, 184, 109, 0.07), rgba(124, 92, 232, 0.08)),
+          rgba(30, 22, 48, 0.72);
+        padding: 14px;
       }
 
       .collection-modal-item--with-icon {
-        grid-template-columns: 38px minmax(0, 1fr);
-        align-items: center;
-        gap: 12px;
+        grid-template-columns: 44px minmax(0, 1fr);
+        align-items: start;
+        gap: 14px;
       }
 
       .collection-modal-icon {
-        width: 38px;
-        height: 38px;
+        width: 44px;
+        height: 44px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -2268,8 +2359,14 @@
         border-radius: var(--radius-sm);
         background: rgba(232, 184, 109, 0.08);
         color: var(--gold2);
-        font-size: 18px;
+        font-size: 19px;
         line-height: 1;
+      }
+
+      .collection-modal-item > div:not(.collection-modal-icon) {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
       }
 
       .collection-modal-item--locked {
@@ -2283,22 +2380,87 @@
       }
 
       .collection-modal-item span {
+        display: block;
         color: var(--gold);
         font-size: 10px;
         letter-spacing: 0.08em;
+        line-height: 1.2;
         text-transform: uppercase;
       }
 
       .collection-modal-item strong {
+        display: block;
         color: var(--text);
         font-size: 13px;
         font-weight: 600;
+        line-height: 1.35;
       }
 
       .collection-modal-item em {
+        display: block;
         color: var(--text2);
         font-size: 12px;
         font-style: normal;
+        line-height: 1.5;
+      }
+
+      .guided-tour-modal {
+        display: grid;
+        gap: 16px;
+      }
+
+      .guided-tour-modal > p {
+        color: var(--text2);
+        font-family: "Lora", serif;
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .guided-tour-steps {
+        display: grid;
+        gap: 10px;
+      }
+
+      .guided-tour-step {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+        border: 1px solid rgba(232, 184, 109, 0.16);
+        border-radius: 8px;
+        background: rgba(30, 22, 48, 0.64);
+        padding: 12px;
+      }
+
+      .guided-tour-step > span {
+        width: 44px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(232, 184, 109, 0.24);
+        border-radius: 8px;
+        background: rgba(232, 184, 109, 0.08);
+        color: var(--gold2);
+        font-size: 18px;
+      }
+
+      .guided-tour-step strong,
+      .guided-tour-step em {
+        display: block;
+      }
+
+      .guided-tour-step strong {
+        color: var(--text);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .guided-tour-step em {
+        color: var(--text2);
+        font-size: 12px;
+        font-style: normal;
+        line-height: 1.5;
+        margin-top: 3px;
       }
 
       .bottom-grid .bottom-sec:nth-child(2) > .btn-outline::before {
