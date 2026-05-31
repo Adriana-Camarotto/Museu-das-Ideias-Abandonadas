@@ -50,7 +50,7 @@ const PORT = process.env.PORT || 3001;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const frontendPath = path.join(__dirname, "../../frontend/dist");
+//const frontendPath = path.join(__dirname, "../../frontend/dist");
 const allowedOrigins = new Set(
   [
     process.env.FRONTEND_URL,
@@ -80,7 +80,7 @@ app.use("/api", apiLimiter);                                 // rate limit geral
 // ─── Arquivos estáticos do frontend ──────────────────────────────────────────
 
 if (fs.existsSync(frontendPath)) {
-  app.use(express.static(frontendPath));
+  //app.use(express.static(frontendPath));
   logger.info({ frontendPath }, "Servindo arquivos estáticos do frontend");
 } else {
   logger.warn({ frontendPath }, "Build do frontend não encontrado — modo API only");
@@ -99,12 +99,9 @@ app.use(errorHandler);
 // ─── 404 e SPA fallback ───────────────────────────────────────────────────────
 
 app.use((req, res) => {
-  if (req.path.startsWith("/api")) {
     return res.status(404).json({
-      success: false,
       error: "Esta rota também foi abandonada... assim como suas ideias! 💀",
     });
-  }
 
   const indexPath = path.join(frontendPath, "index.html");
 
