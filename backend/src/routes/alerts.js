@@ -43,17 +43,21 @@ router.post("/assinar-alertas", async (req, res) => {
 
       return res.status(200).json({
         success: true,
-        simulated: true,
+        devMode: true,
         message:
-          "A Curadoria registrou sua assinatura. Em ambiente local, o setor postal do museu ainda esta em ensaio geral.",
+          "Inscricao registrada em modo desenvolvimento. E-mail nao enviado.",
       });
     }
 
     return res.status(isConfigError ? 500 : 502).json({
       success: false,
+      ...(isConfigError && { code: "EMAIL_NOT_CONFIGURED" }),
+      message: isConfigError
+        ? "Envio de e-mail nao configurado neste ambiente."
+        : "Nao foi possivel enviar o aviso agora.",
       error: isConfigError
-        ? "A Curadoria tentou enviar o aviso, mas o setor postal do museu ainda nao foi configurado."
-        : "Nao foi possivel enviar o aviso agora. O mensageiro tropecou nos degraus do acervo.",
+        ? "Envio de e-mail nao configurado neste ambiente."
+        : "Nao foi possivel enviar o aviso agora.",
       ...(process.env.NODE_ENV === "development" && { details: error.message }),
     });
   }

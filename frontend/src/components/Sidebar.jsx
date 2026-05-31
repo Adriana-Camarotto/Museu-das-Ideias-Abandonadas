@@ -1,31 +1,31 @@
 /**
- * Sidebar - Navegação lateral do Museu
- * Gerencia os botões que abrem modais
+ * Sidebar - Navegacao lateral do Museu
+ * Gerencia os botoes que abrem secoes e modais.
  */
 
-import ApiStatus from './ApiStatus';
 import { useState } from 'react';
+import ApiStatus from './ApiStatus';
 
 export default function Sidebar({ onNavigate }) {
-  const [activeLabel, setActiveLabel] = useState('Início');
+  const [activeLabel, setActiveLabel] = useState('Inicio');
 
   const menuItems = [
-    { id: 'inicio', icon: '🏛️', label: 'Início' },
-    { id: 'museu', icon: '🔮', label: 'Dentro do Museu' },
-    { id: 'memorial', icon: '📜', label: 'Memorial' },
-    { id: 'reliquias', icon: '🗃️', label: 'Relíquias' },
-    { id: 'ranking', icon: '🏅', label: 'Ranking do Caos', badge: '5' },
-    { id: 'conquistas', icon: '🎖️', label: 'Conquistas' },
-    { id: 'timeline', icon: '⌛', label: 'Linha do Tempo', section: 'Explorar' },
-    { id: 'comunidade', icon: '👥', label: 'Comunidade' },
-    { id: 'sobre', icon: 'ℹ️', label: 'Sobre o Museu' }
+    { id: 'inicio', icon: '\u{1F3DB}\uFE0F', label: 'Inicio' },
+    { id: 'museu', icon: '\u{1F5BC}\uFE0F', label: 'Dentro do Museu' },
+    { id: 'memorial', icon: '\u{1FAA6}', label: 'Memorial' },
+    { id: 'reliquias', icon: '\u{1F3FA}', label: 'Reliquias' },
+    { id: 'ranking', icon: '\u{1F3C6}', label: 'Ranking do Caos', badge: '5' },
+    { id: 'conquistas', icon: '\u{1F6E1}\uFE0F', label: 'Conquistas' },
+    { id: 'timeline', icon: '\u{231B}', label: 'Linha do Tempo', section: 'Explorar' },
+    { id: 'comunidade', icon: '\u{1F465}', label: 'Comunidade' },
+    { id: 'sobre', icon: '\u{1F4DC}', label: 'Sobre o Museu' },
   ];
 
   return (
     <aside className="sidebar">
       <div className="logo-wrap">
         <div className="logo-icon">
-          🏛️
+          {'\u{1F3DB}\uFE0F'}
         </div>
         <div className="logo-text">
           <strong>MUSEU</strong>
@@ -34,7 +34,7 @@ export default function Sidebar({ onNavigate }) {
       </div>
 
       <nav>
-        <div className="nav-label">Navegação</div>
+        <div className="nav-label">Navegacao</div>
         <div>
           {menuItems.map((item) => (
             <div key={`${item.label}-${item.icon}`}>

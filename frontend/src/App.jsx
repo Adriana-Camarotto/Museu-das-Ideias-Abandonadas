@@ -7,11 +7,15 @@ import FormModal from './components/FormModal';
 import AuthScreen from './components/AuthScreen';
 import MuseumAtmosphere from './components/MuseumAtmosphere';
 import { seedIdeas } from './data/seedIdeas';
+import { getRandomCuratorPhrase } from './data/curatorPhrases';
 import { listIdeas, markIdeaDeadAgain, reviveIdea, subscribeToAlerts } from './services/ideaService';
 import { authService } from './services/authService';
 import { createCuratorNarration, narrateCuratorText, playMuseumCue } from './services/museumAudio';
 
 const IDEA_LIFECYCLE_STORAGE_KEY = 'museum-idea-lifecycle-v1';
+const IDEA_HONORS_STORAGE_KEY = 'museum-idea-honors-v1';
+const DEFAULT_PREVENTIVE_DEATH_REASON = 'Tentativa de retorno bloqueada pela Curadoria por risco elevado de nova procrastinacao.';
+const PREVENTIVE_DEATH_FEEDBACK = 'Pedido analisado. A Curadoria decidiu proteger seu foco e registrou uma nova morte preventiva.';
 
 function readStoredIdeaLifecycle() {
   if (typeof window === 'undefined') return {};
@@ -20,6 +24,22 @@ function readStoredIdeaLifecycle() {
     return JSON.parse(window.localStorage.getItem(IDEA_LIFECYCLE_STORAGE_KEY) || '{}');
   } catch {
     return {};
+  }
+}
+
+function readStoredIdeaHonors() {
+  if (typeof window === 'undefined') {
+    return { counts: {}, honored: {} };
+  }
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(IDEA_HONORS_STORAGE_KEY) || '{}');
+    return {
+      counts: parsed.counts || {},
+      honored: parsed.honored || {},
+    };
+  } catch {
+    return { counts: {}, honored: {} };
   }
 }
 
@@ -33,7 +53,11 @@ const DEFAULT_IDEA_LIFECYCLE = {
 };
 
 function normalizeIdeaStatus(status) {
-  if (status === 'reviving' || status === 'dead_again' || status === 'abandoned') {
+  if (status === 'reviving') {
+    return 'dead_again';
+  }
+
+  if (status === 'dead_again' || status === 'abandoned') {
     return status;
   }
 
@@ -117,6 +141,9 @@ export default function App() {
   const [activeModal, setActiveModal] = useState(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notificationsSeen, setNotificationsSeen] = useState(false);
+  const [museumViewMode, setMuseumViewMode] = useState('recentes');
   const [activeFilter, setActiveFilter] = useState('Todas');
   const [activeMemTab, setActiveMemTab] = useState('Sobre');
   const [activeRankTab, setActiveRankTab] = useState('Geral');
@@ -126,8 +153,25 @@ export default function App() {
   const [newsletterFeedback, setNewsletterFeedback] = useState(null);
   const [newsletterLoading, setNewsletterLoading] = useState(false);
   const [actionFeedback, setActionFeedback] = useState(null);
+  const [curatorPhrase] = useState(() => getRandomCuratorPhrase());
+  const [notificationLog, setNotificationLog] = useState(() => [
+    {
+      id: 'welcome',
+      icon: '\u{1F3DB}\uFE0F',
+      title: 'O museu recebeu mais uma visita.',
+      text: 'As vitrines fingiram naturalidade. A Curadoria nao.',
+    },
+    {
+      id: 'curator-phrase',
+      icon: '\u{1F4DC}',
+      title: 'Bilhete da Curadoria',
+      text: curatorPhrase.text,
+    },
+  ]);
   const [selectedCandleIdea, setSelectedCandleIdea] = useState('Loja de Velas Aromáticas');
   const [candleCount, setCandleCount] = useState({});
+  const [memorialHonors, setMemorialHonors] = useState(() => readStoredIdeaHonors().counts);
+  const [honoredIdeas, setHonoredIdeas] = useState(() => readStoredIdeaHonors().honored);
   const [realIdeaCards, setRealIdeaCards] = useState([]);
   const [ideasLoading, setIdeasLoading] = useState(false);
   const [ideasError, setIdeasError] = useState(null);
@@ -171,6 +215,13 @@ export default function App() {
   useEffect(() => {
     window.localStorage.setItem(IDEA_LIFECYCLE_STORAGE_KEY, JSON.stringify(ideaLifecycle));
   }, [ideaLifecycle]);
+
+  useEffect(() => {
+    window.localStorage.setItem(IDEA_HONORS_STORAGE_KEY, JSON.stringify({
+      counts: memorialHonors,
+      honored: honoredIdeas,
+    }));
+  }, [memorialHonors, honoredIdeas]);
 
   useEffect(() => {
     if (!actionFeedback) return undefined;
@@ -242,6 +293,10 @@ export default function App() {
 
     return matchesFilter && matchesSearch;
   });
+
+  const displayedMuseumCards = museumViewMode === 'recentes'
+    ? visibleMuseumCards.slice(0, 4)
+    : visibleMuseumCards;
 
   const survivalPcts = [7, 13, 19, 31, 48];
   const survivalPct = survivalPcts[selectedMood] ?? 13;
@@ -357,6 +412,59 @@ export default function App() {
   };
 
   const selectedIdea = museumCards.find(card => card.name === selectedCandleIdea) || museumCards[0];
+  const selectedIdeaIndex = museumCards.findIndex((card) => card.name === selectedIdea.name);
+  const hasMultipleIdeas = museumCards.length > 1;
+  const selectedIdeaHonorCount = Number(memorialHonors[selectedIdea.name] || 0);
+  const selectedIdeaHonored = Boolean(honoredIdeas[selectedIdea.name]);
+
+  const getRelicsForIdea = (idea) => {
+    const category = String(idea?.category || '').toLowerCase();
+    const name = idea?.name || 'esta ideia';
+
+    if (category.includes('curso') || category.includes('estudo')) {
+      return [
+        { icon: '\u{1F4DC}', name: 'Certificado incompleto', description: `Emitido em nome de ${name}, sem modulo final localizado.` },
+        { icon: '\u{1F4D6}', name: 'Apostila fechada no capitulo 2', description: 'As paginas seguintes seguem em excelente estado, infelizmente.' },
+        { icon: '\u{1F516}', name: 'Marcador parado', description: 'Encontrado exatamente onde o entusiasmo pediu intervalo.' },
+        { icon: '\u{270F}\uFE0F', name: 'Caderno de primeira pagina', description: 'A caligrafia inicial era forte. A continuidade, nem tanto.' },
+      ];
+    }
+
+    if (category.includes('fitness') || category.includes('academia')) {
+      return [
+        { icon: '\u{1F3CB}\uFE0F', name: 'Halter esquecido', description: `Associado a ${name}, com poeira de janeiro preservada.` },
+        { icon: '\u{1F45F}', name: 'Tenis empoeirado', description: 'Prometeu voltar segunda-feira e nunca protocolou presenca.' },
+        { icon: '\u{1F6B0}', name: 'Garrafa vazia', description: 'Hidratacao planejada, execucao pendente.' },
+        { icon: '\u{1F9FA}', name: 'Toalha dobrada desde janeiro', description: 'Objeto raro: disciplina em estado decorativo.' },
+      ];
+    }
+
+    if (category.includes('livro') || category.includes('criativ') || category.includes('blog')) {
+      return [
+        { icon: '\u{1F4D3}', name: 'Manuscrito inacabado', description: `Primeiro ato de ${name}; segundo ato ainda em neblina.` },
+        { icon: '\u{2328}\uFE0F', name: 'Maquina de escrever em repouso', description: 'Dramatica, bonita e absolutamente sem prazo.' },
+        { icon: '\u{1F4C4}', name: 'Pagina rasgada', description: 'Versao final agora vai, revisao emocional numero seis.' },
+        { icon: '\u{1F58B}\uFE0F', name: 'Caneta com tinta de intencao', description: 'Escreveu o titulo. Considerou isso um marco.' },
+      ];
+    }
+
+    return [
+      { icon: '\u{1F4BD}', name: 'Dominio comprado e esquecido', description: `Registro vinculado a ${name}, renovado por culpa e debito automatico.` },
+      { icon: '\u{1F4CB}', name: 'Pitch deck empoeirado', description: 'Doze slides, tres fontes e nenhuma validacao conclusiva.' },
+      { icon: '\u{1F4CC}', name: 'Post-it amassado', description: 'Continha a frase mercado enorme, escrita com perigosa confianca.' },
+      { icon: '\u{2615}', name: 'Caneca fria', description: 'Ultima testemunha da reuniao em que tudo parecia possivel.' },
+    ];
+  };
+
+  const selectedIdeaRelics = getRelicsForIdea(selectedIdea);
+  const timelineSteps = [
+    { icon: '\u{2615}', day: 'Marco 1', text: 'Ideia nasceu durante um cafe e uma confianca dificil de auditar.' },
+    { icon: '\u{1F3F7}\uFE0F', day: 'Marco 2', text: 'Nome escolhido com otimismo perigoso e baixa consulta a realidade.' },
+    { icon: '\u{1F50E}', day: 'Marco 3', text: 'Primeira pesquisa feita. Foram abertas abas suficientes para parecer trabalho.' },
+    { icon: '\u{1F4CB}', day: 'Marco 4', text: 'O planejamento ficou bonito demais para ser interrompido por execucao.' },
+    { icon: '\u{1F570}\uFE0F', day: 'Marco 5', text: 'Silencio operacional detectado pela Curadoria.' },
+    { icon: '\u{1F3DB}\uFE0F', day: 'Marco 6', text: 'Ideia entrou no acervo com dignidade, poeira e uma etiqueta provisoria.' },
+  ];
 
   const getLifecycleRecord = (ideaName) => {
     const card = museumCards.find((idea) => idea.name === ideaName);
@@ -384,10 +492,15 @@ export default function App() {
         }
       : {};
 
-    return {
+    const record = {
       ...DEFAULT_IDEA_LIFECYCLE,
       ...seedLifecycle,
       ...(ideaLifecycle[ideaName] || {}),
+    };
+
+    return {
+      ...record,
+      status: normalizeIdeaStatus(record.status),
     };
   };
 
@@ -403,8 +516,8 @@ export default function App() {
     if (status === 'dead_again') {
       return {
         badge: 'Morreu novamente',
-        note: 'A ideia retornou ao museu com novas evidencias de inviabilidade emocional.',
-        button: 'Realizar Nova Tentativa',
+        note: 'Tentativa registrada. Sobrevivencia nao autorizada pela Curadoria.',
+        button: 'Tentar Insistir de Novo',
       };
     }
 
@@ -446,11 +559,18 @@ export default function App() {
   const confirmRevivalAttempt = async () => {
     const ideaName = activeLifecycleIdeaName;
     if (!ideaName) return;
+    const now = new Date().toISOString();
 
     if (activeLifecycleIdea?.id && activeLifecycleIdea?.source === 'usuario') {
-      const updatedIdea = await reviveIdea(activeLifecycleIdea.id);
-      updateRealIdeaCard(updatedIdea);
-      playMuseumCue('revive');
+      await reviveIdea(activeLifecycleIdea.id);
+      const updatedIdea = await markIdeaDeadAgain(activeLifecycleIdea.id, DEFAULT_PREVENTIVE_DEATH_REASON);
+      updateRealIdeaCard({
+        ...updatedIdea,
+        status: 'dead_again',
+        last_death_reason: updatedIdea.last_death_reason || DEFAULT_PREVENTIVE_DEATH_REASON,
+      });
+      playMuseumCue('honor');
+      announceCuratorAction(PREVENTIVE_DEATH_FEEDBACK);
       closeLifecycleModal();
       return;
     }
@@ -462,23 +582,28 @@ export default function App() {
         ...current,
         [ideaName]: {
           ...previous,
-          status: 'reviving',
+          status: 'dead_again',
           revival_attempts: previous.revival_attempts + 1,
-          last_revived_at: new Date().toISOString(),
+          death_count: previous.death_count + 1,
+          last_revived_at: now,
+          died_again_at: now,
+          last_death_reason: DEFAULT_PREVENTIVE_DEATH_REASON,
         },
       };
     });
 
-    playMuseumCue('revive');
+    playMuseumCue('honor');
+    announceCuratorAction(PREVENTIVE_DEATH_FEEDBACK);
     closeLifecycleModal();
   };
 
   const confirmDeathAgain = async () => {
     const ideaName = activeLifecycleIdeaName;
     if (!ideaName) return;
+    const reason = newDeathReason.trim() || DEFAULT_PREVENTIVE_DEATH_REASON;
 
     if (activeLifecycleIdea?.id && activeLifecycleIdea?.source === 'usuario') {
-      const updatedIdea = await markIdeaDeadAgain(activeLifecycleIdea.id, newDeathReason);
+      const updatedIdea = await markIdeaDeadAgain(activeLifecycleIdea.id, reason);
       updateRealIdeaCard(updatedIdea);
       playMuseumCue('honor');
       closeLifecycleModal();
@@ -495,7 +620,7 @@ export default function App() {
           status: 'dead_again',
           death_count: previous.death_count + 1,
           died_again_at: new Date().toISOString(),
-          last_death_reason: newDeathReason.trim(),
+          last_death_reason: reason,
         },
       };
     });
@@ -510,6 +635,86 @@ export default function App() {
     : DEFAULT_IDEA_LIFECYCLE;
   const selectedLifecycleRecord = getLifecycleRecord(selectedIdea.name);
   const selectedLifecycleCopy = getLifecycleCopy(selectedLifecycleRecord.status);
+
+  const getSurvivalPercentage = (card) => {
+    const value = Number(
+      card.survival_percentage ??
+      card.survivalPercentage ??
+      card.analysis?.survival_percentage ??
+      card.analysis?.survivalPercentage ??
+      13
+    );
+
+    return Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 13;
+  };
+
+  const rankingCards = [...museumCards]
+    .map((card) => ({
+      ...card,
+      survivalPercentage: getSurvivalPercentage(card),
+    }))
+    .sort((a, b) => a.survivalPercentage - b.survivalPercentage);
+
+  const totalCandlesLit = Object.values(candleCount).reduce((sum, count) => sum + Number(count || 0), 0);
+  const hasUserIdea = museumCards.some((card) => card.source === 'usuario');
+  const hasRevivalAttempt = museumCards.some((card) => getLifecycleRecord(card.name).revival_attempts > 0);
+  const hasDeadAgain = museumCards.some((card) => {
+    const record = getLifecycleRecord(card.name);
+    return record.status === 'dead_again' || record.death_count > 1;
+  });
+  const mostFragileIdea = rankingCards[0];
+  const mostHopefulIdea = rankingCards[rankingCards.length - 1];
+
+  const achievementItems = [
+    {
+      icon: '\u{1F3DB}\uFE0F',
+      name: 'Primeira Reliquia Registrada',
+      description: hasUserIdea
+        ? 'Uma reliquia sua ja recebeu placa no acervo.'
+        : 'A Curadoria ainda aguarda sua primeira doacao tragicamente promissora.',
+      unlocked: hasUserIdea,
+    },
+    {
+      icon: '\u{1F56F}\uFE0F',
+      name: 'Primeira Homenagem Prestada',
+      description: totalCandlesLit > 0
+        ? `${totalCandlesLit} vela${totalCandlesLit === 1 ? '' : 's'} acesa${totalCandlesLit === 1 ? '' : 's'} em memoria do potencial interrompido.`
+        : 'Nenhuma vela acesa ainda. As reliquias fingem que nao se importam.',
+      unlocked: totalCandlesLit > 0,
+    },
+    {
+      icon: '\u{1F52E}',
+      name: 'Primeira Tentativa de Ressurreicao',
+      description: hasRevivalAttempt
+        ? 'Uma ideia deixou a ala dos abandonados sob observacao cautelosa.'
+        : 'Nenhuma ressurreicao registrada. Por enquanto, repouso administrativo.',
+      unlocked: hasRevivalAttempt,
+    },
+    {
+      icon: '\u{1F494}',
+      name: 'Ideia Morreu Novamente',
+      description: hasDeadAgain
+        ? 'O retorno ao acervo foi documentado com a serenidade que o caso permite.'
+        : 'Ainda nao houve segunda morte. A Curadoria chama isso de progresso provisorio.',
+      unlocked: hasDeadAgain,
+    },
+    {
+      icon: '\u{1F3C6}',
+      name: 'Curadoria Impressionada, Mas Com Ressalvas',
+      description: mostHopefulIdea
+        ? `${mostHopefulIdea.name} sobreviveu estatisticamente a ${mostHopefulIdea.survivalPercentage}% do pessimismo oficial.`
+        : 'Sem dados suficientes para elogios comedidos.',
+      unlocked: Boolean(mostHopefulIdea),
+    },
+    {
+      icon: '\u{1F4C9}',
+      name: 'Otimismo Estatisticamente Comprometido',
+      description: mostFragileIdea
+        ? `${mostFragileIdea.name} lidera a ala da fragilidade com ${mostFragileIdea.survivalPercentage}% de sobrevivencia.`
+        : 'A Curadoria ainda procura uma estatistica digna de moldura.',
+      unlocked: Boolean(mostFragileIdea),
+    },
+  ];
 
   const getExhibitScene = (card) => {
     if (card.name.includes('Startup')) return 'startup-desk';
@@ -546,14 +751,128 @@ export default function App() {
       type,
       message,
     });
+    setNotificationsSeen(false);
+    setNotificationLog((current) => [
+      {
+        id: `notice-${Date.now()}`,
+        icon: type === 'error' ? '\u{26A0}\uFE0F' : '\u{1F56F}\uFE0F',
+        title: 'Chamado da Curadoria',
+        text: message,
+      },
+      ...current,
+    ].slice(0, 6));
+  };
+
+  const toggleNotifications = () => {
+    setIsNotificationsOpen((current) => {
+      const next = !current;
+      if (next) {
+        setNotificationsSeen(true);
+      }
+      return next;
+    });
+  };
+
+  const handleMemorialHonor = () => {
+    if (!selectedIdea?.name) return;
+
+    if (selectedIdeaHonored) {
+      announceCuratorAction('Homenagem ja registrada nesta visita. A Curadoria aprecia consistencia, mas controla o protocolo.');
+      return;
+    }
+
+    setMemorialHonors((current) => ({
+      ...current,
+      [selectedIdea.name]: Number(current[selectedIdea.name] || 0) + 1,
+    }));
+    setHonoredIdeas((current) => ({
+      ...current,
+      [selectedIdea.name]: true,
+    }));
+    playMuseumCue('honor');
+    announceCuratorAction('Homenagem registrada. A ideia recebeu mais um sopro de validacao tardia.');
+  };
+
+  const selectAdjacentIdea = (direction) => {
+    if (!hasMultipleIdeas) return;
+
+    const nextIndex = (selectedIdeaIndex + direction + museumCards.length) % museumCards.length;
+    const nextIdea = museumCards[nextIndex];
+    setSelectedCandleIdea(nextIdea.name);
+    announceCuratorAction(`A Curadoria deslocou a moldura para ${nextIdea.name}.`);
   };
 
   const openCollectionExpansion = ({ modal, tab, ref, message }) => {
+    if (modal === 'relics') {
+      setActiveFilter('Todas');
+      setSearchTerm('');
+      setMuseumViewMode('todas');
+      museumSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
     setActiveMemTab(tab);
     setActiveModal(modal);
-    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    playMuseumCue('modal');
+    if (modal !== 'relics') {
+      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
     announceCuratorAction(message);
+  };
+
+  const handleViewAllRelics = () => {
+    setActiveFilter('Todas');
+    setSearchTerm('');
+    setMuseumViewMode('todas');
+    setActiveModal('relics');
+    museumSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    announceCuratorAction('A Curadoria limpou filtros, poeira e suspeitas. Todas as reliquias voltaram para a vitrine.');
+  };
+
+  const handleViewFullRanking = () => {
+    setActiveModal('ranking');
+    rankingSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    announceCuratorAction('O ranking completo foi retirado do cofre. A gloria e questionavel, mas esta catalogada.');
+  };
+
+  const handleViewAllAchievements = () => {
+    setActiveModal('achievements');
+    achievementSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    announceCuratorAction('Todas as conquistas foram expostas. Algumas merecem aplausos, outras silencio respeitoso.');
+  };
+
+  const handleBottomGridClick = (event) => {
+    const button = event.target.closest('button');
+    if (!button) return;
+
+    const label = button.textContent.toLowerCase();
+
+    if (label.includes('ranking completo')) {
+      openCollectionExpansion({
+        modal: 'ranking',
+        tab: 'EstatÃ­sticas',
+        ref: rankingSectionRef,
+        message: 'O ranking completo foi retirado do cofre. A gloria e questionavel, mas esta catalogada.',
+      });
+      return;
+    }
+
+    if (label.includes('conquistas')) {
+      openCollectionExpansion({
+        modal: 'achievements',
+        tab: 'Conquistas',
+        ref: achievementSectionRef,
+        message: 'Todas as conquistas foram expostas. Algumas merecem aplausos, outras silencio respeitoso.',
+      });
+      return;
+    }
+
+    if (label.includes('rel')) {
+      openCollectionExpansion({
+        modal: 'relics',
+        tab: 'RelÃ­quias',
+        ref: reliquiarySectionRef,
+        message: 'A Curadoria abriu a reserva tecnica das reliquias. Cuidado com os PDFs ritualisticos.',
+      });
+    }
   };
 
   const getNewsletterErrorMessage = (error) => {
@@ -589,7 +908,9 @@ export default function App() {
       const result = await subscribeToAlerts(email);
       setNewsletterFeedback({
         type: 'success',
-        message: result?.message || 'E-mail de confirmacao enviado. Verifique sua caixa de entrada.'
+        message: result?.devMode
+          ? 'A Curadoria registrou sua assinatura. Em ambiente local, o setor postal do museu ainda esta em ensaio geral.'
+          : result?.message || 'E-mail de confirmacao enviado. Verifique sua caixa de entrada.'
       });
       setNewsletterEmail('');
     } catch (error) {
@@ -632,10 +953,32 @@ export default function App() {
             Museu das Ideias Abandonadas · Acervo vivo desde 2019
           </div>
           <div className="topbar-right">
-            <button className="notif-btn" type="button" aria-label="Notificações">
-              🔔
-              <div className="notif-dot"></div>
+            <button className="notif-btn" type="button" aria-label="Notificacoes" onClick={toggleNotifications}>
+              <span aria-hidden="true">{'\u{1F514}'}</span>
+              {!notificationsSeen && <div className="notif-dot"></div>}
             </button>
+            {isNotificationsOpen && (
+              <div className="notifications-panel">
+                <div className="notifications-title">Chamados da Curadoria</div>
+                {notificationLog.length > 0 ? (
+                  <div className="notifications-list">
+                    {notificationLog.map((notification) => (
+                      <div className="notification-item" key={notification.id}>
+                        <div className="notification-icon" aria-hidden="true">{notification.icon}</div>
+                        <div>
+                          <strong>{notification.title}</strong>
+                          <span>{notification.text}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="notifications-empty">
+                    Nenhum chamado da Curadoria no momento. Aproveite o silencio institucional.
+                  </div>
+                )}
+              </div>
+            )}
             <button className="btn-outline" type="button" onClick={handleLogout} style={{ padding: '8px 12px' }}>
               Sair
             </button>
@@ -678,6 +1021,24 @@ export default function App() {
               </div>
             </div>
 
+            <div className="museum-view-tabs" aria-label="Modo de exibicao do acervo">
+              <button
+                className={`museum-view-tab ${museumViewMode === 'recentes' ? 'active' : ''}`}
+                type="button"
+                onClick={() => setMuseumViewMode('recentes')}
+              >
+                Recentes
+              </button>
+              <button
+                className={`museum-view-tab ${museumViewMode === 'todas' ? 'active' : ''}`}
+                type="button"
+                onClick={() => setMuseumViewMode('todas')}
+              >
+                Todas
+              </button>
+              <span>A Curadoria exibe primeiro os casos mais recentes. Os demais seguem arquivados, mas nao esquecidos.</span>
+            </div>
+
             <div className="search-bar">
               <span className="search-icon">🔍</span>
               <input
@@ -710,7 +1071,7 @@ export default function App() {
             </div>
 
             <div className="ideas-grid">
-              {visibleMuseumCards.map((card) => {
+              {displayedMuseumCards.map((card) => {
                 const lifecycleRecord = getLifecycleRecord(card.name);
                 const lifecycleCopy = getLifecycleCopy(lifecycleRecord.status);
 
@@ -818,7 +1179,7 @@ export default function App() {
               <div className="curator-wrap">
                 <div className="curator-face">🎭</div>
                 <div>
-                  <div className="curator-q">"Não é fracasso. É coleção. O museu sempre terá espaço para mais um sonho."</div>
+                  <div className="curator-q">"{curatorPhrase.text}"</div>
                   <div className="curator-sig">- Curadora do Caos</div>
                 </div>
               </div>
@@ -839,10 +1200,34 @@ export default function App() {
                 </div>
               )}
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button type="button" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text2)', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>◀</button>
-              <button type="button" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text2)', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>▶</button>
-              <button type="button" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--danger)', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>💔</button>
+            <div className="memorial-controls">
+              <button
+                type="button"
+                className="memorial-nav-btn"
+                onClick={() => selectAdjacentIdea(-1)}
+                disabled={!hasMultipleIdeas}
+                aria-label="Reliquia anterior"
+              >
+                {'\u{25C0}'}
+              </button>
+              <button
+                type="button"
+                className="memorial-nav-btn"
+                onClick={() => selectAdjacentIdea(1)}
+                disabled={!hasMultipleIdeas}
+                aria-label="Proxima reliquia"
+              >
+                {'\u{25B6}'}
+              </button>
+              <button
+                type="button"
+                className={`memorial-heart-btn ${selectedIdeaHonored ? 'memorial-heart-btn--honored' : ''}`}
+                onClick={handleMemorialHonor}
+                aria-label="Prestar homenagem"
+              >
+                {'\u{1F494}'}
+                {selectedIdeaHonorCount > 0 && <span>{selectedIdeaHonorCount}</span>}
+              </button>
             </div>
           </div>
 
@@ -922,18 +1307,21 @@ export default function App() {
             </div>
         </div>
 
-        <div className="bottom-grid">
+        <div className="bottom-grid" onClick={handleBottomGridClick}>
           <section className="bottom-sec" ref={timelineSectionRef} style={{ background: activeMemTab === 'Linha do Tempo' ? 'var(--bg3)' : 'transparent', padding: activeMemTab === 'Linha do Tempo' ? '12px' : '20px', margin: activeMemTab === 'Linha do Tempo' ? '8px' : '0', borderRadius: activeMemTab === 'Linha do Tempo' ? 'var(--radius-sm)' : '0', boxShadow: activeMemTab === 'Linha do Tempo' ? '0 0 20px rgba(155, 127, 244, 0.6), 0 0 40px rgba(155, 127, 244, 0.3)' : 'none', transition: 'all 0.2s' }}>
             <div className="sec-header">
               <div className="sec-title" style={{ fontSize: '14px' }}>Linha do tempo</div>
             </div>
-            <div className="timeline">
-              <div className="tl-item"><div className="tl-dot"></div><div><div className="tl-day">Dia 1</div><div className="tl-text">Ideia nasceu durante um café e um reels motivacional.</div></div></div>
-              <div className="tl-item"><div className="tl-dot"></div><div><div className="tl-day">Dia 2</div><div className="tl-text">Pesquisa de fornecedores e preços.</div></div></div>
-              <div className="tl-item"><div className="tl-dot"></div><div><div className="tl-day">Dia 3</div><div className="tl-text">Criação do nome, logo e bio no Instagram.</div></div></div>
-              <div className="tl-item"><div className="tl-dot"></div><div><div className="tl-day">Dia 5</div><div className="tl-text">Compras de materiais que ainda não chegaram.</div></div></div>
-              <div className="tl-item"><div className="tl-dot"></div><div><div className="tl-day">Dia 12</div><div className="tl-text">Planejamento da loja virtual (nunca lançada).</div></div></div>
-              <div className="tl-item"><div className="tl-dot rip"></div><div><div className="tl-day" style={{ color: 'var(--danger)' }}>Dia 18</div><div className="tl-text"><strong>Última atividade detectada. Silêncio eterno.</strong></div></div></div>
+            <div className="timeline timeline--trail">
+              {timelineSteps.map((step, index) => (
+                <div className="tl-item tl-item--trail" key={step.day}>
+                  <div className={`tl-dot ${index === timelineSteps.length - 1 ? 'rip' : ''}`}>{step.icon}</div>
+                  <div>
+                    <div className="tl-day">{step.day}</div>
+                    <div className="tl-text">{step.text}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
 
@@ -941,11 +1329,16 @@ export default function App() {
             <div className="sec-header">
               <div className="sec-title" style={{ fontSize: '14px' }}>Relíquias encontradas</div>
             </div>
-            <div className="relics-grid">
-              <div className="relic-item"><div className="relic-icon">📄</div><div className="relic-name">Plano de Negócios FINAL_v3_agoraVai.pdf</div></div>
-              <div className="relic-item"><div className="relic-icon">📝</div><div className="relic-name">Lista de nomes para a marca</div></div>
-              <div className="relic-item"><div className="relic-icon">🏷️</div><div className="relic-name">Rascunho do logo (nunca usado)</div></div>
-              <div className="relic-item"><div className="relic-icon">🛒</div><div className="relic-name">Embalagens compradas por impulso</div></div>
+            <div className="relics-grid relics-grid--found">
+              {selectedIdeaRelics.slice(0, 4).map((relic) => (
+                <div className="relic-item relic-item--found" key={relic.name}>
+                  <div className="relic-icon">{relic.icon}</div>
+                  <div>
+                    <div className="relic-name">{relic.name}</div>
+                    <div className="relic-desc">{relic.description}</div>
+                  </div>
+                </div>
+              ))}
             </div>
             <button className="btn-outline" type="button" style={{ width: '100%', marginTop: '12px', fontSize: '12px' }}>Ver todas as relíquias</button>
           </section>
@@ -978,10 +1371,20 @@ export default function App() {
             <div className="sec-header">
               <div className="sec-title" style={{ fontSize: '14px' }}>Conquistas desbloqueadas</div>
             </div>
-            <div className="achievement"><div className="ach-medal">🎖</div><div><div className="ach-name">Colecionador de Começos</div><div className="ach-desc">Começou 10 projetos em um ano</div></div></div>
-            <div className="achievement"><div className="ach-medal">🛍</div><div><div className="ach-name">Comprou Antes de Fazer</div><div className="ach-desc">Investiu em itens antes de validar a ideia</div></div></div>
-            <div className="achievement"><div className="ach-medal">🎴</div><div><div className="ach-name">Especialista em Tutoriais</div><div className="ach-desc">Assistiu 50+ tutoriais e não fez nada</div></div></div>
-            <div className="achievement"><div className="ach-medal">🗂️</div><div><div className="ach-name">Mestre do Planejamento</div><div className="ach-desc">Planejou mais do que executou</div></div></div>
+            <div className="achievement-badges">
+              {achievementItems.slice(0, 4).map((achievement) => (
+                <div
+                  className={`achievement-badge ${achievement.unlocked ? 'achievement-badge--unlocked' : 'achievement-badge--locked'}`}
+                  key={achievement.name}
+                >
+                  <div className="achievement-badge-medal">{achievement.unlocked ? achievement.icon : '\u{1F512}'}</div>
+                  <div>
+                    <div className="ach-name">{achievement.name}</div>
+                    <div className="ach-desc">{achievement.unlocked ? 'Selo concedido pela Curadoria.' : 'Registro pendente.'}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
             <button className="btn-outline" type="button" style={{ width: '100%', marginTop: '4px', fontSize: '12px' }}>Ver todas conquistas</button>
           </section>
 
@@ -1082,6 +1485,80 @@ export default function App() {
         </MuseumModal>
       )}
 
+      {activeModal === 'relics' && (
+        <MuseumModal
+          isOpen={true}
+          onClose={closeModal}
+          title="Reserva Tecnica de Reliquias"
+          hideFooter
+        >
+          <div className="collection-modal-list">
+            {selectedIdeaRelics.map((relic) => (
+              <div className="collection-modal-item collection-modal-item--with-icon" key={relic.name}>
+                <div className="collection-modal-icon" aria-hidden="true">{relic.icon}</div>
+                <div>
+                  <span>Arquivado</span>
+                  <strong>{relic.name}</strong>
+                  <em>{relic.description}</em>
+                </div>
+              </div>
+            ))}
+          </div>
+        </MuseumModal>
+      )}
+
+      {activeModal === 'ranking' && (
+        <MuseumModal
+          isOpen={true}
+          onClose={closeModal}
+          title="Ranking Completo da Curadoria"
+          hideFooter
+        >
+          <p className="collection-modal-intro">
+            As reliquias abaixo foram classificadas pela Curadoria conforme seu grau de otimismo estatisticamente comprometido.
+          </p>
+          <div className="collection-modal-list">
+            {rankingCards.map((card, index) => (
+              <div className="collection-modal-item collection-modal-item--with-icon" key={card.id || card.name}>
+                <div className="collection-modal-icon" aria-hidden="true">
+                  {index === 0 ? '\u{1F4C9}' : card.icon}
+                </div>
+                <div>
+                  <span>{index + 1}. {card.category}</span>
+                  <strong>{card.name}</strong>
+                  <em>{card.survivalPercentage}% de sobrevivencia - {card.cause}</em>
+                </div>
+              </div>
+            ))}
+          </div>
+        </MuseumModal>
+      )}
+
+      {activeModal === 'achievements' && (
+        <MuseumModal
+          isOpen={true}
+          onClose={closeModal}
+          title="Galeria de Conquistas Duvidosas"
+          hideFooter
+        >
+          <div className="collection-modal-list">
+            {achievementItems.map((achievement) => (
+              <div
+                className={`collection-modal-item collection-modal-item--with-icon ${achievement.unlocked ? 'collection-modal-item--unlocked' : 'collection-modal-item--locked'}`}
+                key={achievement.name}
+              >
+                <div className="collection-modal-icon" aria-hidden="true">{achievement.icon}</div>
+                <div>
+                  <span>{achievement.unlocked ? 'Desbloqueada' : 'Em observacao'}</span>
+                  <strong>{achievement.name}</strong>
+                  <em>{achievement.description}</em>
+                </div>
+              </div>
+            ))}
+          </div>
+        </MuseumModal>
+      )}
+
       <FormModal isOpen={isFormModalOpen} onClose={closeModal}>
         <IdeaForm onIdeaAdded={handleIdeaAdded} />
       </FormModal>
@@ -1090,17 +1567,16 @@ export default function App() {
         <MuseumModal
           isOpen={true}
           onClose={closeLifecycleModal}
-          title="Reabrir o Caso"
+          title="A Curadoria precisa intervir"
           hideFooter
         >
           <div className="lifecycle-modal-copy">
             <p>
-              A curadoria informa que esta ideia ja conhece o caminho de volta para o museu.
-              Deseja registrar uma nova tentativa mesmo assim?
+              Os registros indicam que esta ideia ja passou por aqui antes.
             </p>
             <p>
-              A ideia sera liberada temporariamente da ala dos abandonados. A curadoria
-              acompanhara o caso de perto, sem criar expectativas desnecessarias.
+              Deseja mesmo tentar traze-la de volta, mesmo sabendo que ela provavelmente
+              vai ocupar mais uma pasta chamada agora vai?
             </p>
             {activeLifecycleRecord.revival_attempts > 0 && (
               <p className="lifecycle-footnote">
@@ -1110,10 +1586,10 @@ export default function App() {
           </div>
           <div className="lifecycle-modal-actions">
             <button className="btn-primary" type="button" onClick={confirmRevivalAttempt}>
-              Sim, tentar novamente
+              Sim, insistir mesmo assim
             </button>
             <button className="btn-outline" type="button" onClick={closeLifecycleModal}>
-              Melhor deixar repousar
+              Melhor preservar minha paz
             </button>
           </div>
         </MuseumModal>

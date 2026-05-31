@@ -1929,6 +1929,401 @@
         color: var(--text3);
       }
 
+      .topbar-right {
+        position: relative;
+      }
+
+      .notif-btn {
+        position: relative;
+        width: 34px;
+        height: 34px;
+        border: 1px solid rgba(232, 184, 109, 0.22);
+        border-radius: 8px;
+        background: rgba(232, 184, 109, 0.08);
+        color: var(--gold2);
+        cursor: pointer;
+        transition: border-color 0.2s ease, background 0.2s ease, transform 0.16s ease;
+      }
+
+      .notif-btn:hover {
+        border-color: rgba(232, 184, 109, 0.46);
+        background: rgba(232, 184, 109, 0.14);
+        transform: translateY(-1px);
+      }
+
+      .notifications-panel {
+        position: absolute;
+        top: 42px;
+        right: 58px;
+        z-index: 140;
+        width: min(340px, calc(100vw - 32px));
+        border: 1px solid var(--border2);
+        border-radius: var(--radius-sm);
+        background:
+          linear-gradient(145deg, rgba(26, 19, 40, 0.98), rgba(15, 11, 24, 0.96)),
+          var(--card);
+        box-shadow: 0 22px 60px rgba(0, 0, 0, 0.42), 0 0 28px rgba(124, 92, 232, 0.14);
+        padding: 12px;
+      }
+
+      .notifications-title {
+        color: var(--gold);
+        font-family: "Cinzel", serif;
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+
+      .notifications-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .notification-item {
+        display: grid;
+        grid-template-columns: 32px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+        border: 1px solid rgba(180, 140, 255, 0.12);
+        border-radius: 8px;
+        background: rgba(30, 22, 48, 0.66);
+        padding: 10px;
+      }
+
+      .notification-icon {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 7px;
+        background: rgba(232, 184, 109, 0.1);
+      }
+
+      .notification-item strong,
+      .notification-item span {
+        display: block;
+      }
+
+      .notification-item strong {
+        color: var(--text);
+        font-size: 12px;
+        margin-bottom: 3px;
+      }
+
+      .notification-item span,
+      .notifications-empty {
+        color: var(--text2);
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      .museum-view-tabs {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: -4px 0 14px;
+      }
+
+      .museum-view-tab {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: rgba(30, 22, 48, 0.72);
+        color: var(--text2);
+        cursor: pointer;
+        font-family: "DM Sans", sans-serif;
+        font-size: 12px;
+        padding: 7px 12px;
+        transition: all 0.2s ease;
+      }
+
+      .museum-view-tab:hover,
+      .museum-view-tab.active {
+        border-color: var(--purple);
+        color: var(--text);
+        background: rgba(124, 92, 232, 0.2);
+      }
+
+      .museum-view-tabs span {
+        color: var(--text3);
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      .relics-grid--found {
+        display: grid;
+        gap: 8px;
+      }
+
+      .relic-item--found {
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr);
+        gap: 9px;
+        align-items: start;
+        border: 1px solid rgba(232, 184, 109, 0.16);
+        border-radius: 8px;
+        background:
+          linear-gradient(135deg, rgba(232, 184, 109, 0.08), transparent),
+          rgba(30, 22, 48, 0.6);
+        padding: 9px;
+      }
+
+      .relic-item--found .relic-icon {
+        width: 34px;
+        height: 34px;
+        display: grid;
+        place-items: center;
+        border-radius: 7px;
+        background: rgba(15, 11, 24, 0.72);
+        border: 1px solid rgba(232, 184, 109, 0.22);
+      }
+
+      .relic-desc {
+        color: var(--text3);
+        font-size: 10.5px;
+        line-height: 1.35;
+        margin-top: 3px;
+      }
+
+      .achievement-badges {
+        display: grid;
+        gap: 8px;
+      }
+
+      .achievement-badge {
+        display: grid;
+        grid-template-columns: 38px minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: rgba(30, 22, 48, 0.64);
+        padding: 9px;
+      }
+
+      .achievement-badge-medal {
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        border: 1px solid rgba(232, 184, 109, 0.32);
+        background: radial-gradient(circle, rgba(232, 184, 109, 0.18), rgba(124, 92, 232, 0.1));
+        box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.03);
+      }
+
+      .achievement-badge--unlocked {
+        border-color: rgba(232, 184, 109, 0.32);
+        box-shadow: 0 0 20px rgba(232, 184, 109, 0.08);
+      }
+
+      .achievement-badge--locked {
+        opacity: 0.68;
+        filter: saturate(0.7);
+      }
+
+      .timeline--trail {
+        position: relative;
+      }
+
+      .timeline--trail::before {
+        content: "";
+        position: absolute;
+        left: 12px;
+        top: 10px;
+        bottom: 10px;
+        border-left: 1px dashed rgba(232, 184, 109, 0.32);
+      }
+
+      .tl-item--trail {
+        position: relative;
+        gap: 10px;
+      }
+
+      .tl-item--trail .tl-dot {
+        z-index: 1;
+        width: 26px;
+        height: 26px;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(232, 184, 109, 0.28);
+        background: rgba(15, 11, 24, 0.92);
+        color: var(--gold2);
+        font-size: 13px;
+      }
+
+      .memorial-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .memorial-nav-btn,
+      .memorial-heart-btn {
+        min-width: 34px;
+        min-height: 30px;
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        background: rgba(30, 22, 48, 0.62);
+        color: var(--text2);
+        cursor: pointer;
+        font-family: "DM Sans", sans-serif;
+        font-size: 12px;
+        transition: all 0.18s ease;
+      }
+
+      .memorial-nav-btn:hover,
+      .memorial-heart-btn:hover {
+        border-color: var(--purple);
+        color: var(--text);
+        transform: translateY(-1px);
+      }
+
+      .memorial-nav-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.42;
+        transform: none;
+      }
+
+      .memorial-heart-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        color: #f2aaa9;
+      }
+
+      .memorial-heart-btn--honored {
+        border-color: rgba(224, 96, 96, 0.42);
+        background: rgba(224, 96, 96, 0.14);
+        box-shadow: 0 0 18px rgba(224, 96, 96, 0.12);
+      }
+
+      .memorial-heart-btn span {
+        color: var(--gold2);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .curator-action-feedback {
+        position: sticky;
+        top: 0;
+        z-index: 90;
+        margin: 0;
+        border-bottom: 1px solid rgba(232, 184, 109, 0.22);
+        background:
+          linear-gradient(90deg, rgba(232, 184, 109, 0.16), rgba(124, 92, 232, 0.12)),
+          rgba(15, 11, 24, 0.96);
+        color: var(--gold2);
+        padding: 10px 24px;
+        font-size: 12px;
+        line-height: 1.45;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+        animation: curator-feedback-arrival 0.22s ease-out;
+      }
+
+      .curator-action-feedback--error {
+        border-bottom-color: rgba(224, 96, 96, 0.32);
+        color: #f2aaa9;
+        background:
+          linear-gradient(90deg, rgba(224, 96, 96, 0.14), rgba(124, 92, 232, 0.08)),
+          rgba(15, 11, 24, 0.96);
+      }
+
+      .collection-modal-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .collection-modal-intro {
+        color: var(--text2);
+        font-family: "Lora", serif;
+        font-size: 13px;
+        line-height: 1.6;
+        margin-bottom: 14px;
+      }
+
+      .collection-modal-item {
+        display: grid;
+        gap: 4px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: rgba(30, 22, 48, 0.72);
+        padding: 12px;
+      }
+
+      .collection-modal-item--with-icon {
+        grid-template-columns: 38px minmax(0, 1fr);
+        align-items: center;
+        gap: 12px;
+      }
+
+      .collection-modal-icon {
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(232, 184, 109, 0.28);
+        border-radius: var(--radius-sm);
+        background: rgba(232, 184, 109, 0.08);
+        color: var(--gold2);
+        font-size: 18px;
+        line-height: 1;
+      }
+
+      .collection-modal-item--locked {
+        opacity: 0.72;
+      }
+
+      .collection-modal-item--locked .collection-modal-icon {
+        border-color: rgba(180, 140, 255, 0.18);
+        background: rgba(124, 92, 232, 0.08);
+        filter: grayscale(1);
+      }
+
+      .collection-modal-item span {
+        color: var(--gold);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .collection-modal-item strong {
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .collection-modal-item em {
+        color: var(--text2);
+        font-size: 12px;
+        font-style: normal;
+      }
+
+      .bottom-grid .bottom-sec:nth-child(2) > .btn-outline::before {
+        content: "\1F5DD";
+      }
+
+      .bottom-grid .bottom-sec:nth-child(3) > .btn-outline::before {
+        content: "\1F3C6";
+      }
+
+      .bottom-grid .bottom-sec:nth-child(4) > .btn-outline::before {
+        content: "\1F396";
+      }
+
+      @keyframes curator-feedback-arrival {
+        from {
+          opacity: 0;
+          transform: translateY(-8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
       @keyframes museum-smoke-drift {
         0%, 100% {
           transform: translate3d(0, 0, 0) scale(1);
