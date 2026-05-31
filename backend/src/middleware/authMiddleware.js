@@ -29,6 +29,12 @@ if (config.supabaseUrl && config.supabaseAnonKey) {
  */
 export async function authMiddleware(req, res, next) {
   try {
+    const devUser = parseDevAuth(req);
+    if (devUser) {
+      req.user = devUser;
+      return next();
+    }
+
     // Se Supabase não está configurado, pula autenticação
     if (!supabase) {
       console.warn('⚠️  Supabase não configurado - pulando autenticação');
@@ -87,6 +93,12 @@ export async function authMiddleware(req, res, next) {
  */
 export async function optionalAuthMiddleware(req, res, next) {
   try {
+    const devUser = parseDevAuth(req);
+    if (devUser) {
+      req.user = devUser;
+      return next();
+    }
+
     // Se Supabase não está configurado, pula autenticação
     if (!supabase) {
       req.user = null;
@@ -125,6 +137,23 @@ export async function optionalAuthMiddleware(req, res, next) {
   }
 }
 
+function parseDevAuth(req) {
+  if (process.env.NODE_ENV === 'production') return null;
+
+  const authHeader = req.headers.authorization || '';
+  if (!authHeader.startsWith('Bearer dev:')) return null;
+
+  const [id = 'dev-user', email = 'dev@localhost'] = authHeader
+    .substring('Bearer dev:'.length)
+    .split(':');
+
+  return {
+    id,
+    email: decodeURIComponent(email),
+    metadata: { provider: 'dev' },
+  };
+}
+
 /**
  * Middleware para verificar se usuário está autenticado
  * Usa req.user criado pelo authMiddleware
@@ -136,7 +165,7 @@ export function requireAuth(req, res, next) {
     if (process.env.NODE_ENV === 'development') {
       console.warn('⚠️  Modo desenvolvimento - criando usuário fake');
       req.user = {
-        id: 'dev-user-' + Date.now(),
+        id: process.env.DEV_USER_ID || 'dev-user',
         email: 'dev@localhost',
         metadata: {},
       };

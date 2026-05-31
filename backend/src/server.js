@@ -1,179 +1,123 @@
 /**
- * MUSEU DAS IDEIAS ABANDONADAS - Backend API (Refatorado)
- * 
- * Servidor Express com arquitetura em camadas:
- * - Controllers: Lógica de requisição
- * - Services: Lógica de negócio
- * - Routes: Definição de endpoints
- * - Middleware: Tratamento transversal
- * 
- * @author Backend Sênior
- * @version 2.0.0
+ * MUSEU DAS IDEIAS ABANDONADAS — Backend API
+ *
+ * Ponto de entrada do servidor. Responsável apenas por:
+ *   1. Carregar variáveis de ambiente
+ *   2. Inicializar dependências externas (Gemini, Mailer)
+ *   3. Montar middlewares e rotas
+ *   4. Subir o servidor HTTP
+ *
+ * Lógica de negócio vive em src/services.
+ * Rotas vivem em src/routes.
  */
 
-import express from 'express';
-import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
 
-import config from './config/environment.js';
-import errorHandler from './middleware/errorHandler.js';
-import { authMiddleware } from './middleware/authMiddleware.js';
-import ideasRoutes from './routes/ideas.js';
-import aiRoutes from './routes/ai.js';
+import logger from "./config/logger.js";
+import { initGemini } from "./config/gemini.js";
+import { initMailer } from "./config/mailer.js";
+import { apiLimiter } from "./middleware/rateLimiter.js";
+import { requestLogger } from "./middleware/requestLogger.js";
 
-// Configuração de diretórios para ES modules
+import healthRouter from "./routes/health.js";
+import ideasRouter from "./routes/ideas.js";
+import alertsRouter from "./routes/alerts.js";
+import aiRouter from "./routes/ai.js";
+import authRouter from "./routes/auth.js";
+import errorHandler from "./middleware/errorHandler.js";
+
+// ─── Inicializa dependências externas ────────────────────────────────────────
+
+try {
+  initGemini();
+} catch (error) {
+  logger.fatal({ err: error.message }, "Falha ao inicializar Gemini — encerrando");
+  process.exit(1);
+}
+
+initMailer(); // não crítico — servidor sobe mesmo sem SMTP configurado
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const frontendPath = path.join(__dirname, '../../frontend/dist');
+const frontendPath = path.join(__dirname, "../../frontend/dist");
 
-// Inicializar Express
-const app = express();
+// ─── Middlewares globais ──────────────────────────────────────────────────────
 
-// ============================================
-// MIDDLEWARES
-// ============================================
+app.use(helmet());                                           // headers de segurança HTTP
+app.use(cors({ origin: process.env.FRONTEND_URL }));         // CORS restrito à origem do frontend
+app.use(express.json({ limit: "20kb" }));                    // body JSON com limite de tamanho
+app.use(requestLogger);                                      // log estruturado de cada requisição
+app.use("/api", apiLimiter);                                 // rate limit geral para toda a API
 
-// CORS com restrição de origem
-app.use(cors({
-  origin: config.frontendUrl,
-  credentials: true,
-}));
+// ─── Arquivos estáticos do frontend ──────────────────────────────────────────
 
-// Parse JSON
-app.use(express.json());
+if (fs.existsSync(frontendPath)) {
+  app.use(express.static(frontendPath));
+  logger.info({ frontendPath }, "Servindo arquivos estáticos do frontend");
+} else {
+  logger.warn({ frontendPath }, "Build do frontend não encontrado — modo API only");
+}
 
-// Servir arquivos estáticos do frontend
-app.use(express.static(frontendPath));
+// ─── Rotas da API ─────────────────────────────────────────────────────────────
 
-// ============================================
-// ROTAS DE SAÚDE
-// ============================================
-
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    message: 'O Museu das Ideias Abandonadas está de portas abertas!',
-    timestamp: new Date().toISOString(),
-    version: '2.0.0',
-  });
-});
-
-// ============================================
-// ROTAS DE API
-// ============================================
-
-// Rotas de Ideias
-app.use('/api/ideas', ideasRoutes);
-
-// Rotas de IA
-app.use('/ai', aiRoutes);
-
-// Compatibilidade com endpoint antigo - POST /api/analisar-ideia
-app.post('/api/analisar-ideia', async (req, res, next) => {
-  try {
-    const { nome, categoria, empolgacao, motivo } = req.body;
-
-    // Validação
-    if (!nome || !categoria || !empolgacao || !motivo) {
-      return res.status(400).json({
-        success: false,
-        error: 'Dados incompletos. Até ideias abandonadas merecem informações completas!',
-      });
-    }
-
-    if (empolgacao < 1 || empolgacao > 5) {
-      return res.status(400).json({
-        success: false,
-        error: 'A empolgação deve estar entre 1 e 5. Nem tudo na vida é extremo!',
-      });
-    }
-
-    console.log('📨 Requisição recebida (endpoint antigo):', { nome, categoria, empolgacao, motivo });
-
-    // Chamar controller de ideias
-    const { getGeminiService } = await import('./services/GeminiService.js');
-    const geminiService = getGeminiService();
-    const analysis = await geminiService.analyzeIdea({
-      nome,
-      categoria,
-      empolgacao,
-      motivo,
-    });
-
-    res.status(200).json({
-      success: true,
-      data: analysis,
-    });
-  } catch (error) {
-    console.error('❌ Erro ao analisar ideia:', error.message);
-    next(error);
-  }
-});
-
-// ============================================
-// ROTA 404
-// ============================================
-
-app.use((req, res) => {
-  if (req.path.startsWith('/api') || req.path.startsWith('/ai')) {
-    return res.status(404).json({
-      success: false,
-      error: 'Esta rota também foi abandonada... assim como suas ideias! 💀',
-    });
-  }
-
-  // Fallback para SPA
-  res.sendFile(path.join(frontendPath, 'index.html'));
-});
-
-// ============================================
-// MIDDLEWARE DE ERRO
-// ============================================
+app.use("/api", healthRouter);
+app.use("/api", ideasRouter);
+app.use("/api", alertsRouter);
+app.use("/api/ai", aiRouter);
+app.use("/api/auth", authRouter);
 
 app.use(errorHandler);
 
-// ============================================
-// INICIAR SERVIDOR
-// ============================================
+// ─── 404 e SPA fallback ───────────────────────────────────────────────────────
 
-app.listen(config.port, () => {
-  console.log(`
-╔═══════════════════════════════════════════════════════════╗
-║                                                           ║
-║     🏛️  MUSEU DAS IDEIAS ABANDONADAS - Backend API       ║
-║                                                           ║
-║     Versão: 3.0.0 (FASE 3 - Autenticação Supabase)      ║
-║     Servidor rodando em: http://localhost:${config.port}        ║
-║     Ambiente: ${config.nodeEnv}                      ║
-║                                                           ║
-║     ✅ Autenticação Supabase Auth ativada                ║
-║     ✅ Proteção de rotas com JWT                         ║
-║     ✅ Persistência real no Supabase                     ║
-║     ✅ Sistema multi-tenant por usuário                  ║
-║                                                           ║
-║     Endpoints protegidos:                                 ║
-║     • POST /api/ideas/analyze (requer JWT)               ║
-║     • GET  /api/ideas (requer JWT)                       ║
-║     • GET  /api/ideas/:id (requer JWT)                   ║
-║     • POST /api/ideas/:id/honor (requer JWT)             ║
-║     • POST /api/ideas/:id/revive (requer JWT)            ║
-║     • GET  /api/ideas/stats/user (requer JWT)            ║
-║                                                           ║
-║     Frontend: ${config.frontendUrl}     ║
-║                                                           ║
-╚═══════════════════════════════════════════════════════════╝
-  `);
+app.use((req, res) => {
+  if (req.path.startsWith("/api")) {
+    return res.status(404).json({
+      success: false,
+      error: "Esta rota também foi abandonada... assim como suas ideias! 💀",
+    });
+  }
+
+  const indexPath = path.join(frontendPath, "index.html");
+
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
+
+  return res.status(404).send("Frontend não encontrado.");
 });
 
-// Tratamento de erros não capturados
-process.on('unhandledRejection', (error) => {
-  console.error('❌ Erro não tratado:', error);
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+
+app.listen(PORT, () => {
+  logger.info(
+    {
+      port: PORT,
+      env: process.env.NODE_ENV || "development",
+      frontend: process.env.FRONTEND_URL,
+    },
+    "Servidor iniciado"
+  );
 });
 
-process.on('uncaughtException', (error) => {
-  console.error('❌ Exceção não capturada:', error);
+// ─── Tratamento de erros não capturados ───────────────────────────────────────
+
+process.on("unhandledRejection", (error) => {
+  logger.error({ err: error }, "Unhandled rejection");
+});
+
+process.on("uncaughtException", (error) => {
+  logger.fatal({ err: error }, "Uncaught exception — encerrando");
   process.exit(1);
 });
-
-export default app;

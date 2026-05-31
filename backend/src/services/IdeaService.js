@@ -19,6 +19,8 @@ import config from '../config/environment.js';
 
 class IdeaService {
   constructor() {
+    this.ideasMemory = new Map();
+    this.ideaEventsMemory = [];
     // Inicializar Supabase se credenciais disponíveis
     if (config.supabaseUrl && config.supabaseServiceRoleKey) {
       this.supabase = createClient(config.supabaseUrl, config.supabaseServiceRoleKey);
@@ -29,6 +31,25 @@ class IdeaService {
       // Fallback em memória para desenvolvimento
       this.ideasMemory = new Map();
     }
+  }
+
+  shouldFallbackToMemory(error) {
+    if (config.isProduction) return false;
+    const message = String(error?.message || '').toLowerCase();
+    return (
+      error?.code === 'PGRST205' ||
+      error?.code === '42P01' ||
+      message.includes('schema cache') ||
+      message.includes('could not find the table') ||
+      (message.includes('relation') && message.includes('does not exist'))
+    );
+  }
+
+  fallbackToMemory(error) {
+    if (!this.shouldFallbackToMemory(error)) return false;
+    console.warn(`Supabase indisponivel/incompleto em desenvolvimento (${error.message}). Usando memoria.`);
+    this.supabase = null;
+    return true;
   }
 
   /**
@@ -94,6 +115,9 @@ class IdeaService {
       }
     } catch (error) {
       console.error('❌ Erro ao buscar ideia por hash:', error.message);
+      if (this.fallbackToMemory(error)) {
+        return this.findIdeaByHash(ideaHash, userId);
+      }
       throw error;
     }
   }
@@ -188,6 +212,9 @@ class IdeaService {
       }
     } catch (error) {
       console.error('❌ Erro ao criar ideia:', error.message);
+      if (this.fallbackToMemory(error)) {
+        return this.createIdea(ideaData);
+      }
       throw error;
     }
   }
@@ -229,6 +256,9 @@ class IdeaService {
       }
     } catch (error) {
       console.error('❌ Erro ao obter ideia:', error.message);
+      if (this.fallbackToMemory(error)) {
+        return this.getIdea(ideaId, userId);
+      }
       throw error;
     }
   }
@@ -316,6 +346,9 @@ class IdeaService {
       }
     } catch (error) {
       console.error('❌ Erro ao listar ideias:', error.message);
+      if (this.fallbackToMemory(error)) {
+        return this.listIdeas(options);
+      }
       throw error;
     }
   }
@@ -354,7 +387,7 @@ class IdeaService {
    * @param {string} userId - ID do usuário (para validação)
    * @returns {Promise<Object>} Dados de homenagem com trigger visual
    */
-  async incrementHonor(ideaId, userId = null) {
+  async incrementHonor(ideaId, userId = null, eventType = 'honor') {
     try {
       // Validação de segurança: verificar se ideia pertence ao usuário
       const idea = await this.getIdea(ideaId, userId);
@@ -364,6 +397,7 @@ class IdeaService {
 
       const newHonorCount = (idea.honor_count || 0) + 1;
 
+      let updatedIdea;
       if (this.supabase) {
         const { data, error } = await this.supabase
           .from('ideas')
@@ -379,29 +413,79 @@ class IdeaService {
           throw error;
         }
 
-        console.log(`🎉 Homenagem adicionada: ${data.honor_count} homenagens`);
-        return {
-          honor_count: data.honor_count,
-          trigger: 'celebration',
-          message: `Ideia homenageada! Total: ${data.honor_count}`,
-        };
+        updatedIdea = data;
       } else {
         // Fallback em memória
-        const idea = this.ideasMemory.get(ideaId);
-        if (idea) {
-          idea.honor_count = newHonorCount;
-          idea.updated_at = new Date().toISOString();
-          console.log(`🎉 Homenagem adicionada (memória): ${idea.honor_count} homenagens`);
-          return {
-            honor_count: idea.honor_count,
-            trigger: 'celebration',
-            message: `Ideia homenageada! Total: ${idea.honor_count}`,
-          };
+        const storedIdea = this.ideasMemory.get(ideaId);
+        if (storedIdea) {
+          storedIdea.honor_count = newHonorCount;
+          storedIdea.updated_at = new Date().toISOString();
+          updatedIdea = storedIdea;
+        } else {
+          throw new Error('Ideia não encontrada');
         }
-        throw new Error('Ideia não encontrada');
       }
+
+      await this.registerEvent(ideaId, userId, eventType, 1);
+
+      console.log(`🎉 Homenagem adicionada: ${updatedIdea.honor_count} homenagens`);
+      return {
+        honor_count: updatedIdea.honor_count,
+        trigger: 'celebration',
+        message: `Ideia homenageada! Total: ${updatedIdea.honor_count}`,
+      };
     } catch (error) {
       console.error('❌ Erro ao incrementar homenagem:', error.message);
+      if (this.fallbackToMemory(error)) {
+        return this.incrementHonor(ideaId, userId, eventType);
+      }
+      throw error;
+    }
+  }
+
+  async registerEvent(ideaId, userId = null, type = 'honor', points = 0, metadata = {}) {
+    try {
+      const newEvent = {
+        id: crypto.randomUUID(),
+        idea_id: ideaId,
+        user_id: userId,
+        type,
+        points,
+        metadata,
+        created_at: new Date().toISOString(),
+      };
+
+      if (this.supabase) {
+        const { data, error } = await this.supabase
+          .from('idea_events')
+          .insert([newEvent])
+          .select()
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        return data;
+      }
+
+      this.ideaEventsMemory.push(newEvent);
+      return newEvent;
+    } catch (error) {
+      console.error('❌ Erro ao registrar evento da ideia:', error.message);
+      if (this.fallbackToMemory(error)) {
+        return this.registerEvent(ideaId, userId, type, points, metadata);
+      }
+      throw error;
+    }
+  }
+
+  async lightCandle(ideaId, userId = null) {
+    try {
+      await this.incrementHonor(ideaId, userId, 'candle_light');
+      return this.getIdea(ideaId, userId);
+    } catch (error) {
+      console.error('❌ Erro ao acender vela:', error.message);
       throw error;
     }
   }
@@ -458,6 +542,9 @@ class IdeaService {
       }
     } catch (error) {
       console.error('❌ Erro ao arquivar ideia:', error.message);
+      if (this.fallbackToMemory(error)) {
+        return this.archiveIdea(ideaId, userId);
+      }
       throw error;
     }
   }
@@ -613,6 +700,9 @@ class IdeaService {
       }
     } catch (error) {
       console.error('❌ Erro ao obter estatísticas:', error.message);
+      if (this.fallbackToMemory(error)) {
+        return this.getStatistics(userId);
+      }
       throw error;
     }
   }

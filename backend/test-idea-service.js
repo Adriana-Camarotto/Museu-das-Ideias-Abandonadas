@@ -7,8 +7,11 @@
  * Uso: node test-idea-service.js
  */
 
-import { getIdeaService } from './src/services/IdeaService.js';
-import { getGeminiService } from './src/services/GeminiService.js';
+process.env.SUPABASE_URL = '';
+process.env.SUPABASE_SERVICE_ROLE_KEY = '';
+
+const { getIdeaService } = await import('./src/services/IdeaService.js');
+const { getGeminiService } = await import('./src/services/GeminiService.js');
 
 const ideaService = getIdeaService();
 const geminiService = getGeminiService();
