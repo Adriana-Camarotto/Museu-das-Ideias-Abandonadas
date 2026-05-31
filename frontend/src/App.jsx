@@ -30,6 +30,11 @@ export default function App() {
     { icon: '💻', name: 'Plataforma SaaS B2B', dates: '2023 – 2024', cause: 'Competência aumentou demais' },
     { icon: '🌿', name: 'Eco-Startup Sustentável', dates: '2025 – 2025', cause: 'Custos de produção inviáveis' },
     { icon: '🎓', name: 'Curso Online Premium', dates: '2023 – 2024', cause: 'Gravação de vídeo muito cansativa' },
+    { icon: '🏠', name: 'Marketplace Imobiliário', dates: '2024 – 2025', cause: 'Burocracia imobiliária complexa' },
+    { icon: '🍕', name: 'Franquia de Pizza Artesanal', dates: '2023 – 2024', cause: 'Aluguel do ponto muito caro' },
+    { icon: '✈️', name: 'Agência de Viagens Alternativa', dates: '2025 – 2025', cause: 'Pandemia voltou do nada' },
+    { icon: '💄', name: 'Loja de Cosméticos Veganos', dates: '2024 – 2024', cause: 'Concorrência muito forte' },
+    { icon: '📚', name: 'Plataforma de E-books', dates: '2023 – 2024', cause: 'Pirataria é um problema' },
     { icon: '🕯️', name: 'Loja de Velas Aromáticas', dates: '2022 – 2022', cause: 'Pesquisa excessiva no Pinterest' },
     { icon: '🎬', name: 'Canal de Produtividade', dates: '2023 – 2023', cause: 'Editou o primeiro vídeo e desistiu' },
     { icon: '🇩🇪', name: 'Curso de Alemão B1', dates: '2021 – 2021', cause: 'Duolingo burnout' },
@@ -233,19 +238,29 @@ export default function App() {
                                   ? 'linear-gradient(135deg, #1a2a1a, #203525)'
                                   : card.name === 'Curso Online Premium'
                                     ? 'linear-gradient(135deg, #2a1a3a, #3d2050)'
-                                    : card.name === 'Loja de Velas Aromáticas'
-                                      ? 'linear-gradient(135deg, #2a1a1a, #3d2020)'
-                                      : card.name === 'Canal de Produtividade'
-                                        ? 'linear-gradient(135deg, #1a2a1a, #203520)'
-                                        : card.name === 'Curso de Alemão B1'
-                                          ? 'linear-gradient(135deg, #1a1a2a, #202040)'
-                                          : card.name === 'Projeto Fitness'
-                                            ? 'linear-gradient(135deg, #201a2a, #30203d)'
-                                            : card.name === 'Podcast sobre Mindset'
-                                              ? 'linear-gradient(135deg, #1a2028, #20283d)'
-                                              : card.name === 'Aprender Aquarela'
-                                                ? 'linear-gradient(135deg, #28201a, #3d3020)'
-                                                : 'linear-gradient(135deg, #1e1a30, #282048)'
+                                    : card.name === 'Marketplace Imobiliário'
+                                      ? 'linear-gradient(135deg, #2a2a1f, #3d3d2a)'
+                                      : card.name === 'Franquia de Pizza Artesanal'
+                                        ? 'linear-gradient(135deg, #2a1f1a, #3d2820)'
+                                        : card.name === 'Agência de Viagens Alternativa'
+                                          ? 'linear-gradient(135deg, #1a2a3a, #203550)'
+                                          : card.name === 'Loja de Cosméticos Veganos'
+                                            ? 'linear-gradient(135deg, #2a1a3a, #3d2850)'
+                                            : card.name === 'Plataforma de E-books'
+                                              ? 'linear-gradient(135deg, #1a1a2a, #252550)'
+                                              : card.name === 'Loja de Velas Aromáticas'
+                                                ? 'linear-gradient(135deg, #2a1a1a, #3d2020)'
+                                                : card.name === 'Canal de Produtividade'
+                                                  ? 'linear-gradient(135deg, #1a2a1a, #203520)'
+                                                  : card.name === 'Curso de Alemão B1'
+                                                    ? 'linear-gradient(135deg, #1a1a2a, #202040)'
+                                                    : card.name === 'Projeto Fitness'
+                                                      ? 'linear-gradient(135deg, #201a2a, #30203d)'
+                                                      : card.name === 'Podcast sobre Mindset'
+                                                        ? 'linear-gradient(135deg, #1a2028, #20283d)'
+                                                        : card.name === 'Aprender Aquarela'
+                                                          ? 'linear-gradient(135deg, #28201a, #3d3020)'
+                                                          : 'linear-gradient(135deg, #1e1a30, #282048)'
                     }}
                   >
                     <span>{card.icon}</span>
